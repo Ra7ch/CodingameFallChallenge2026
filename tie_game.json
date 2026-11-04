@@ -1,0 +1,1211 @@
+game 916490429
+options: seed=-8548966703851875000
+    units=1,0_0,1_1,0_0,1_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_1,0_0,1_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0_0,0
+    edges=0,2_0,19_0,20_1,3_1,18_1,21_2,9_3,8_4,5_4,13_4,15_4,24_4,39_4,40_5,12_5,14_5,25_5,38_5,41_6,8_6,33_7,9_7,32_8,12_8,18_8,33_8,41_9,13_9,19_9,32_9,40_10,19_10,20_10,28_11,18_11,21_11,29_12,14_12,18_12,30_12,41_13,15_13,19_13,31_13,40_14,25_14,30_15,24_15,31_16,21_16,27_16,30_16,37_17,20_17,26_17,31_17,36_18,29_19,28_20,34_21,35_22,26_22,33_22,38_22,41_23,27_23,32_23,39_23,40_24,26_24,36_25,27_25,37_26,36_26,38_27,37_27,39_28,31_28,34_29,30_29,35_30,35_31,34_32,40_33,41
+    nodes=129,449_1790,510_103,721_1816,238_816,585_1103,374_1698,140_221,819_1534,263_385,696_202,288_1717,671_1359,421_560,538_1157,607_762,352_1353,881_566,78_1605,444_314,515_186,133_1733,826_1237,164_682,795_970,284_949,675_926,78_993,881_430,330_1489,629_1309,679_610,280_360,845_1559,114_405,139_1514,820_713,168_1206,791_1042,160_877,799_556,691_1363,268
+agents:
+  0 Ra07Ch (me, agent_id 6845791, rank 662)
+  1 MrKhan90 (agent_id 6843044, rank 652)
+frame 0
+frame 1 agent 0
+  stderr: Turn 1 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: MOVE 0 13 1;MOVE 2 9 1;MOVE 20 10 1
+frame 2 agent 1
+  stdout: MOVE 3 17 1
+frame 3 agent 0
+  stderr: Turn 2 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 4 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 5 agent 0
+  stderr: Turn 3 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 6 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 7 agent 0
+  stderr: Turn 4 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 8 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 9 agent 0
+  stderr: Turn 5 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 10 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 11 agent 0
+  stderr: Turn 6 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 12 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 13 agent 0
+  stderr: Turn 7 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 14 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 15 agent 0
+  stderr: Turn 8 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 16 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 17 agent 0
+  stderr: Turn 9 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 18 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 19 agent 0
+  stderr: Turn 10 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 20 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 21 agent 0
+  stderr: Turn 11 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 22 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 23 agent 0
+  stderr: Turn 12 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 24 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 25 agent 0
+  stderr: Turn 13 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 26 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 27 agent 0
+  stderr: Turn 14 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 28 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 29 agent 0
+  stderr: Turn 15 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 30 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 31 agent 0
+  stderr: Turn 16 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 32 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 33 agent 0
+  stderr: Turn 17 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 34 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 35 agent 0
+  stderr: Turn 18 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 36 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 37 agent 0
+  stderr: Turn 19 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 38 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 39 agent 0
+  stderr: Turn 20 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 40 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 41 agent 0
+  stderr: Turn 21 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 42 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 43 agent 0
+  stderr: Turn 22 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 44 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 45 agent 0
+  stderr: Turn 23 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 46 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 47 agent 0
+  stderr: Turn 24 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 48 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 49 agent 0
+  stderr: Turn 25 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 50 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 51 agent 0
+  stderr: Turn 26 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 52 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 53 agent 0
+  stderr: Turn 27 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 54 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 55 agent 0
+  stderr: Turn 28 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 56 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 57 agent 0
+  stderr: Turn 29 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 58 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 59 agent 0
+  stderr: Turn 30 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 60 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 61 agent 0
+  stderr: Turn 31 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 62 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 63 agent 0
+  stderr: Turn 32 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 64 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 65 agent 0
+  stderr: Turn 33 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 66 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 67 agent 0
+  stderr: Turn 34 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 68 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 69 agent 0
+  stderr: Turn 35 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 70 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 71 agent 0
+  stderr: Turn 36 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 72 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 73 agent 0
+  stderr: Turn 37 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 74 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 75 agent 0
+  stderr: Turn 38 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 76 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 77 agent 0
+  stderr: Turn 39 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 78 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 79 agent 0
+  stderr: Turn 40 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 80 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 81 agent 0
+  stderr: Turn 41 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 82 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 83 agent 0
+  stderr: Turn 42 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 84 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 85 agent 0
+  stderr: Turn 43 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 86 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 87 agent 0
+  stderr: Turn 44 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 88 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 89 agent 0
+  stderr: Turn 45 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 90 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 91 agent 0
+  stderr: Turn 46 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 92 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 93 agent 0
+  stderr: Turn 47 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 94 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 95 agent 0
+  stderr: Turn 48 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 96 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 97 agent 0
+  stderr: Turn 49 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 98 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 99 agent 0
+  stderr: Turn 50 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 100 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 101 agent 0
+  stderr: Turn 51 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 102 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 103 agent 0
+  stderr: Turn 52 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 104 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 105 agent 0
+  stderr: Turn 53 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 106 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 107 agent 0
+  stderr: Turn 54 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 108 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 109 agent 0
+  stderr: Turn 55 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 110 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 111 agent 0
+  stderr: Turn 56 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 112 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 113 agent 0
+  stderr: Turn 57 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 114 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 115 agent 0
+  stderr: Turn 58 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 116 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 117 agent 0
+  stderr: Turn 59 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 118 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 119 agent 0
+  stderr: Turn 60 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 120 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 121 agent 0
+  stderr: Turn 61 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 122 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 123 agent 0
+  stderr: Turn 62 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 124 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 125 agent 0
+  stderr: Turn 63 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 126 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 127 agent 0
+  stderr: Turn 64 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 128 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 129 agent 0
+  stderr: Turn 65 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 130 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 131 agent 0
+  stderr: Turn 66 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 132 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 133 agent 0
+  stderr: Turn 67 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 134 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 135 agent 0
+  stderr: Turn 68 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 136 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 137 agent 0
+  stderr: Turn 69 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 138 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 139 agent 0
+  stderr: Turn 70 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 140 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 141 agent 0
+  stderr: Turn 71 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 142 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 143 agent 0
+  stderr: Turn 72 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 144 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 145 agent 0
+  stderr: Turn 73 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 146 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 147 agent 0
+  stderr: Turn 74 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 148 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 149 agent 0
+  stderr: Turn 75 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 150 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 151 agent 0
+  stderr: Turn 76 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 152 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 153 agent 0
+  stderr: Turn 77 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 154 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 155 agent 0
+  stderr: Turn 78 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 156 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 157 agent 0
+  stderr: Turn 79 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 158 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 159 agent 0
+  stderr: Turn 80 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 160 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 161 agent 0
+  stderr: Turn 81 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 162 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 163 agent 0
+  stderr: Turn 82 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 164 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 165 agent 0
+  stderr: Turn 83 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 166 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 167 agent 0
+  stderr: Turn 84 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 168 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 169 agent 0
+  stderr: Turn 85 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 170 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 171 agent 0
+  stderr: Turn 86 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 172 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 173 agent 0
+  stderr: Turn 87 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 174 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 175 agent 0
+  stderr: Turn 88 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 176 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 177 agent 0
+  stderr: Turn 89 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 178 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 179 agent 0
+  stderr: Turn 90 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 180 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 181 agent 0
+  stderr: Turn 91 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 182 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 183 agent 0
+  stderr: Turn 92 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 184 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 185 agent 0
+  stderr: Turn 93 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 186 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 187 agent 0
+  stderr: Turn 94 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 188 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 189 agent 0
+  stderr: Turn 95 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 190 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 191 agent 0
+  stderr: Turn 96 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 192 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 193 agent 0
+  stderr: Turn 97 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 194 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 195 agent 0
+  stderr: Turn 98 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 196 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 197 agent 0
+  stderr: Turn 99 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 198 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 199 agent 0
+  stderr: Turn 100 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 200 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 201 agent 0
+  stderr: Turn 101 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 202 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 203 agent 0
+  stderr: Turn 102 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 204 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 205 agent 0
+  stderr: Turn 103 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 206 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 207 agent 0
+  stderr: Turn 104 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 208 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 209 agent 0
+  stderr: Turn 105 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 210 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 211 agent 0
+  stderr: Turn 106 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 212 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 213 agent 0
+  stderr: Turn 107 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 214 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 215 agent 0
+  stderr: Turn 108 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 216 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 217 agent 0
+  stderr: Turn 109 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 218 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 219 agent 0
+  stderr: Turn 110 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 220 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 221 agent 0
+  stderr: Turn 111 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 222 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 223 agent 0
+  stderr: Turn 112 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 224 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 225 agent 0
+  stderr: Turn 113 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 226 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 227 agent 0
+  stderr: Turn 114 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 228 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 229 agent 0
+  stderr: Turn 115 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 230 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 231 agent 0
+  stderr: Turn 116 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 232 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 233 agent 0
+  stderr: Turn 117 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 234 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 235 agent 0
+  stderr: Turn 118 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 236 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 237 agent 0
+  stderr: Turn 119 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 238 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 239 agent 0
+  stderr: Turn 120 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 240 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 241 agent 0
+  stderr: Turn 121 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 242 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 243 agent 0
+  stderr: Turn 122 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 244 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 245 agent 0
+  stderr: Turn 123 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 246 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 247 agent 0
+  stderr: Turn 124 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 248 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 249 agent 0
+  stderr: Turn 125 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 250 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 251 agent 0
+  stderr: Turn 126 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 252 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 253 agent 0
+  stderr: Turn 127 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 254 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 255 agent 0
+  stderr: Turn 128 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 256 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 257 agent 0
+  stderr: Turn 129 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 258 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 259 agent 0
+  stderr: Turn 130 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 260 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 261 agent 0
+  stderr: Turn 131 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 262 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 263 agent 0
+  stderr: Turn 132 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 264 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 265 agent 0
+  stderr: Turn 133 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 266 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 267 agent 0
+  stderr: Turn 134 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 268 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 269 agent 0
+  stderr: Turn 135 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 270 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 271 agent 0
+  stderr: Turn 136 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 272 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 273 agent 0
+  stderr: Turn 137 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 274 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 275 agent 0
+  stderr: Turn 138 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 276 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 277 agent 0
+  stderr: Turn 139 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 278 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 279 agent 0
+  stderr: Turn 140 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 280 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 281 agent 0
+  stderr: Turn 141 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 282 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 283 agent 0
+  stderr: Turn 142 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 284 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 285 agent 0
+  stderr: Turn 143 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 286 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 287 agent 0
+  stderr: Turn 144 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 288 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 289 agent 0
+  stderr: Turn 145 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 290 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 291 agent 0
+  stderr: Turn 146 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 292 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 293 agent 0
+  stderr: Turn 147 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 294 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 295 agent 0
+  stderr: Turn 148 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 296 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 297 agent 0
+  stderr: Turn 149 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 298 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 299 agent 0
+  stderr: Turn 150 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 300 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 301 agent 0
+  stderr: Turn 151 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 302 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 303 agent 0
+  stderr: Turn 152 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 304 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 305 agent 0
+  stderr: Turn 153 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 306 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 307 agent 0
+  stderr: Turn 154 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 308 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 309 agent 0
+  stderr: Turn 155 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 310 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 311 agent 0
+  stderr: Turn 156 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 312 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 313 agent 0
+  stderr: Turn 157 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 314 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 315 agent 0
+  stderr: Turn 158 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 316 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 317 agent 0
+  stderr: Turn 159 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 318 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 319 agent 0
+  stderr: Turn 160 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 320 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 321 agent 0
+  stderr: Turn 161 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 322 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 323 agent 0
+  stderr: Turn 162 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 324 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 325 agent 0
+  stderr: Turn 163 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 326 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 327 agent 0
+  stderr: Turn 164 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 328 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 329 agent 0
+  stderr: Turn 165 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 330 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 331 agent 0
+  stderr: Turn 166 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 332 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 333 agent 0
+  stderr: Turn 167 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 334 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 335 agent 0
+  stderr: Turn 168 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 336 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 337 agent 0
+  stderr: Turn 169 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 338 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 339 agent 0
+  stderr: Turn 170 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 340 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 341 agent 0
+  stderr: Turn 171 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 342 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 343 agent 0
+  stderr: Turn 172 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 344 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 345 agent 0
+  stderr: Turn 173 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 346 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 347 agent 0
+  stderr: Turn 174 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 348 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 349 agent 0
+  stderr: Turn 175 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 350 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 351 agent 0
+  stderr: Turn 176 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 352 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 353 agent 0
+  stderr: Turn 177 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 354 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 355 agent 0
+  stderr: Turn 178 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 356 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 357 agent 0
+  stderr: Turn 179 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 358 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 359 agent 0
+  stderr: Turn 180 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 360 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 361 agent 0
+  stderr: Turn 181 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 362 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 363 agent 0
+  stderr: Turn 182 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 364 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 365 agent 0
+  stderr: Turn 183 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 366 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 367 agent 0
+  stderr: Turn 184 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 368 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 369 agent 0
+  stderr: Turn 185 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 370 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 371 agent 0
+  stderr: Turn 186 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 372 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 373 agent 0
+  stderr: Turn 187 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 374 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 375 agent 0
+  stderr: Turn 188 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 376 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 377 agent 0
+  stderr: Turn 189 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 378 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 379 agent 0
+  stderr: Turn 190 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 380 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 381 agent 0
+  stderr: Turn 191 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 382 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 383 agent 0
+  stderr: Turn 192 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 384 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 385 agent 0
+  stderr: Turn 193 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 386 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 387 agent 0
+  stderr: Turn 194 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 388 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 389 agent 0
+  stderr: Turn 195 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 390 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 391 agent 0
+  stderr: Turn 196 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 392 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 393 agent 0
+  stderr: Turn 197 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 394 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 395 agent 0
+  stderr: Turn 198 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 396 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 397 agent 0
+  stderr: Turn 199 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 398 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+frame 399 agent 0
+  stderr: Turn 200 | Score: 0-0 | Units: 3-3 | Triangles: 0-0
+  stdout: WAIT
+frame 400 agent 1
+  summary: $1: Task can't be applied: MOVE 3 17 1
+  stdout: MOVE 3 17 1
+result
+  scores: 0=0 1=0
+  ranking (agent indexes, winner first): 0 1

@@ -1,0 +1,25 @@
+# Compiled binaries
+bot
+bot_v*
+!bot_v*.cpp
+sim_arena
+bench
+bench_exact
+test_matcher
+test_t3_bench
+*.o
+*.a
+*.so
+
+# Sensitive credentials & environment files
+*token*
+*.key
+.env
+
+# Large test output logs
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
