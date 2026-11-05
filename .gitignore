@@ -16,8 +16,10 @@ test_t3_bench
 *.key
 .env
 
-# Large test output logs
+# Large test output logs & API snapshots
 *.log
+tg_*.json
+current_*.json
 
 # Python cache
 __pycache__/

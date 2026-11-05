@@ -12,7 +12,7 @@
 using namespace std;
 
 static constexpr int MAX_N = 64;
-static constexpr int MAX_T = 160;
+static constexpr int MAX_T = 256;
 static constexpr int INF_DIST = 99;
 
 struct Point {
@@ -52,6 +52,8 @@ struct FastRNG {
 // Global board data per turn
 int N;
 Point pos[MAX_N];
+vector<int> initAdj[MAX_N];
+uint64_t initAdjMask[MAX_N];
 vector<int> adj[MAX_N];
 uint64_t adjMask[MAX_N];
 int distMat[MAX_N][MAX_N];
@@ -69,6 +71,7 @@ bool armedEnemyAtkZone[MAX_N];
 bool potentialEnemyAtkZone[MAX_N];
 
 struct EnemyAtkTri {
+    int c0, c1, c2;
     uint64_t mask;
     uint64_t zMask;
     bool ownedNow;
@@ -81,8 +84,12 @@ uint64_t oppHasUnitsMask;
 uint64_t oppRobustHasUnitsMask;
 uint64_t possibleSelfSurrMask;
 uint64_t canBeSurr1StepMask;
+uint64_t pureEarMask;
+uint64_t degLe2Mask;
+uint64_t interiorOwnedMask;
 
 int nodePotential[MAX_N];
+int minCapDist[MAX_N];
 
 // Partitioned triangles after pre-move ATTACKs
 int S_cnt;
@@ -132,6 +139,108 @@ bool triHasNeighborNode(const Tri& t, int target) {
     return ((adjMask[t.h1] | adjMask[t.h2] | adjMask[t.h3]) >> target) & 1ULL;
 }
 
+inline int dist2Nodes(int a, int b) {
+    int dx = pos[a].x - pos[b].x;
+    int dy = pos[a].y - pos[b].y;
+    return dx * dx + dy * dy;
+}
+
+inline bool ccwNodes(int a, int b, int c) {
+    return (int64_t)(pos[c].y - pos[a].y) * (pos[b].x - pos[a].x) >
+           (int64_t)(pos[b].y - pos[a].y) * (pos[c].x - pos[a].x);
+}
+
+inline bool edgesCross(int a1, int a2, int b1, int b2) {
+    if (a1 == a2) return false;
+    if (a1 == b1 || a2 == b1 || a1 == b2 || a2 == b2) return false;
+    return ccwNodes(a1, b1, b2) != ccwNodes(a2, b1, b2) &&
+           ccwNodes(a1, a2, b1) != ccwNodes(a1, a2, b2);
+}
+
+inline bool nodeInsideTri(int m, int a, int b, int c) {
+    if (m == a || m == b || m == c) return false;
+    bool c1 = ccwNodes(m, a, b);
+    bool c2 = ccwNodes(m, b, c);
+    bool c3 = ccwNodes(m, c, a);
+    bool hasNeg = !c1 || !c2 || !c3;
+    bool hasPos = c1 || c2 || c3;
+    return !(hasNeg && hasPos);
+}
+
+bool canAddEdgeNow(int u, int v) {
+    if (u < 0 || v < 0 || u >= N || v >= N || u == v) return false;
+    if ((adjMask[u] >> v) & 1ULL) return false;
+    if (dist2Nodes(u, v) > 400 * 400) return false;
+    for (int x = 0; x < N; ++x) {
+        for (int y : adj[x]) {
+            if (y <= x) continue;
+            if (edgesCross(u, v, x, y)) return false;
+        }
+    }
+    return true;
+}
+
+void addGraphEdge(int u, int v) {
+    if (!((adjMask[u] >> v) & 1ULL)) {
+        adj[u].push_back(v);
+        sort(adj[u].begin(), adj[u].end());
+        adj[v].push_back(u);
+        sort(adj[v].begin(), adj[v].end());
+        adjMask[u] |= (1ULL << v);
+        adjMask[v] |= (1ULL << u);
+    }
+}
+
+void removeGraphEdge(int u, int v) {
+    if ((adjMask[u] >> v) & 1ULL) {
+        adj[u].erase(remove(adj[u].begin(), adj[u].end(), v), adj[u].end());
+        adj[v].erase(remove(adj[v].begin(), adj[v].end(), u), adj[v].end());
+        adjMask[u] &= ~(1ULL << v);
+        adjMask[v] &= ~(1ULL << u);
+    }
+}
+
+void rebuildTrianglesInBot() {
+    int oldCnt = T_cnt;
+    Tri oldTris[MAX_T];
+    for (int i = 0; i < oldCnt; ++i) oldTris[i] = allTris[i];
+
+    T_cnt = 0;
+    for (int i = 0; i < N; ++i) {
+        for (int j : adj[i]) {
+            if (j <= i) continue;
+            uint64_t common = adjMask[i] & adjMask[j];
+            for (uint64_t m = common; m; m &= (m - 1)) {
+                int k = __builtin_ctzll(m);
+                if (k <= j) continue;
+                bool anyIn = false;
+                for (int nd = 0; nd < N; ++nd) {
+                    if (nodeInsideTri(nd, i, j, k)) { anyIn = true; break; }
+                }
+                if (!anyIn && T_cnt < MAX_T) {
+                    Tri nt;
+                    nt.id = T_cnt;
+                    nt.h1 = i; nt.h2 = j; nt.h3 = k;
+                    nt.c[0] = i; nt.c[1] = j; nt.c[2] = k;
+                    nt.mask = (1ULL << i) | (1ULL << j) | (1ULL << k);
+                    nt.owner = -1;
+                    nt.meCan = true;
+                    nt.oppCan = true;
+                    for (int oi = 0; oi < oldCnt; ++oi) {
+                        if (oldTris[oi].mask == nt.mask) {
+                            nt.owner = oldTris[oi].owner;
+                            nt.meCan = oldTris[oi].meCan;
+                            nt.oppCan = oldTris[oi].oppCan;
+                            break;
+                        }
+                    }
+                    allTris[T_cnt++] = nt;
+                }
+            }
+        }
+    }
+}
+
 void precomputeTurnMetrics() {
     oppHasUnitsMask = 0;
     oppRobustHasUnitsMask = 0;
@@ -166,8 +275,17 @@ void precomputeTurnMetrics() {
 
     possibleSelfSurrMask = 0;
     canBeSurr1StepMask = 0;
+    pureEarMask = 0;
+    degLe2Mask = 0;
     for (int u = 0; u < N; ++u) {
         if (adjMask[u] == 0) continue;
+        if (adj[u].size() <= 2) degLe2Mask |= (1ULL << u);
+        if (adj[u].size() == 2) {
+            int x = adj[u][0], y = adj[u][1];
+            if ((adjMask[x] >> y) & 1ULL) {
+                pureEarMask |= (1ULL << u);
+            }
+        }
         if ((adjMask[u] & ~oppHasUnitsMask) == 0) {
             possibleSelfSurrMask |= (1ULL << u);
         }
@@ -203,7 +321,7 @@ void precomputeTurnMetrics() {
             if (supply >= 3) {
                 bool ownedNow = (t.owner == 1);
                 bool armedNow = ownedNow && (oppUnits[t.h1] >= 1 && oppUnits[t.h2] >= 1 && oppUnits[t.h3] >= 1);
-                eatkTris[E_cnt++] = {t.mask, zMask, ownedNow, armedNow};
+                eatkTris[E_cnt++] = {t.h1, t.h2, t.h3, t.mask, zMask, ownedNow, armedNow};
                 for (uint64_t m = zMask; m; m &= (m - 1)) {
                     int u = __builtin_ctzll(m);
                     if (armedNow) armedEnemyAtkZone[u] = true;
@@ -214,16 +332,24 @@ void precomputeTurnMetrics() {
     }
 
     S_cnt = C_cnt = R_cnt = 0;
+    uint64_t ownedUnionMask = 0;
     for (int i = 0; i < T_cnt; ++i) {
         const Tri& t = allTris[i];
         if (t.owner == 0) {
             int idx = S_cnt++;
             ownedTriIdx[idx] = i;
+            ownedUnionMask |= t.mask;
             oppCanThreatenOwned[idx] = (t.oppCan && oppReach[t.h1] >= 1 && oppReach[t.h2] >= 1 && oppReach[t.h3] >= 1);
         } else if (t.meCan) {
             capTriIdx[C_cnt++] = i;
         } else if (t.owner == -1 && !t.meCan) {
             resetTriIdx[R_cnt++] = i;
+        }
+    }
+    interiorOwnedMask = 0;
+    for (int u = 0; u < N; ++u) {
+        if (adjMask[u] != 0 && ((ownedUnionMask >> u) & 1ULL) && (adjMask[u] & ~ownedUnionMask) == 0) {
+            interiorOwnedMask |= (1ULL << u);
         }
     }
 
@@ -240,13 +366,13 @@ void precomputeTurnMetrics() {
 
     oppHoldMode = (totalOppUnitsGlobal >= 34 || oppTriCountGlobal >= domThreshold - 5);
 
-    // Army target & marginal spawn curve (match real enemy army without melting on enemy holds)
-    int baseCap = max(38, (int)ceil(N * 0.84));
-    int matchOpp = (oppTriCountGlobal >= domThreshold - 5)
+    // Army target & marginal spawn curve (match real enemy army + Gold surplus without melting on enemy holds)
+    int baseCap = max(44, (int)ceil(N * 0.96));
+    int matchOpp = (oppTriCountGlobal >= domThreshold - 4)
                    ? (totalOppUnitsGlobal + 2)
-                   : (totalOppUnitsGlobal + 4);
-    int maxCap = (oppTriCountGlobal >= domThreshold - 5) ? 48 : 64;
-    armyTargetGlobal = clamp(max(baseCap, matchOpp), 38, maxCap);
+                   : (totalOppUnitsGlobal + 6);
+    int maxCap = (oppTriCountGlobal >= domThreshold - 4) ? 48 : 64;
+    armyTargetGlobal = clamp(max(baseCap, matchOpp), 42, maxCap);
 
     int remTurns = max(1, 200 - curTurn);
     marginalSpawnGain[0] = 0;
@@ -255,25 +381,33 @@ void precomputeTurnMetrics() {
         int gain = 0;
         if (remTurns <= 12) {
             gain = min(1700, remTurns * 140);
-        } else if (uAfter <= 16) {
+        } else if (uAfter <= 18) {
             gain = 6800;
-        } else if (uAfter <= 28) {
+        } else if (uAfter <= 32) {
             gain = 5400;
         } else if (uAfter <= armyTargetGlobal) {
-            gain = 2650 + (armyTargetGlobal - uAfter) * 180;
+            gain = 2900 + (armyTargetGlobal - uAfter) * 165;
         } else {
             gain = max(450, 1150 - (uAfter - armyTargetGlobal) * 150);
         }
         marginalSpawnGain[k] = marginalSpawnGain[k - 1] + gain;
     }
 
-    // Precompute multi-step nodePotential[u] toward capturable triangles
+    // Precompute multi-step nodePotential[u] and minCapDist[u] toward capturable triangles
     static const double decay[12] = {1.0, 0.56, 0.31, 0.17, 0.09, 0.05, 0.025, 0.012, 0.006, 0.003, 0.001, 0.0005};
     for (int u = 0; u < N; ++u) {
         double pot = 0.0;
+        int bestDCap = 10;
         for (int ci = 0; ci < C_cnt; ++ci) {
             const Tri& t = allTris[capTriIdx[ci]];
-            int d = min({distMat[u][t.h1], distMat[u][t.h2], distMat[u][t.h3]});
+            int d = INF_DIST;
+            for (int c : t.c) {
+                if (!((pureEarMask >> c) & 1ULL) || oppUnits[c] > 0) {
+                    if (distMat[u][c] < d) d = distMat[u][c];
+                }
+            }
+            if (d == INF_DIST) d = min({distMat[u][t.h1], distMat[u][t.h2], distMat[u][t.h3]});
+            if (d < bestDCap) bestDCap = d;
             if (d >= 12) continue;
             double attr = 205.0;
             if (t.owner == 1) attr = (oppHoldMode ? 270.0 : 205.0);
@@ -297,6 +431,7 @@ void precomputeTurnMetrics() {
         }
         // If no meCan==1 triangles exist at all (rare), attract adjacent to resettable triangles (d == 1, NOT d == 0!)
         if (C_cnt == 0) {
+            bestDCap = 0;
             for (int ri = 0; ri < R_cnt; ++ri) {
                 const Tri& t = allTris[resetTriIdx[ri]];
                 int d = min({distMat[u][t.h1], distMat[u][t.h2], distMat[u][t.h3]});
@@ -304,6 +439,7 @@ void precomputeTurnMetrics() {
                 else if (d > 1 && d < 10) pot += 150.0 * decay[d];
             }
         }
+        minCapDist[u] = bestDCap;
         nodePotential[u] = (int)llround(pot);
     }
 }
@@ -450,7 +586,8 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
     // Evaluate owned triangles (HOLD vs SPAWN)
     for (int j = 0; j < S_cnt; ++j) {
         const Tri& t = allTris[ownedTriIdx[j]];
-        if (spawnChoice[j] == -1) {
+        int sc = spawnChoice[j];
+        if (sc == -1) {
             // Held! Kept unless opponent captures all 3 corners
             bool oppCapsNow = t.oppCan && ((owned1 & t.mask) == t.mask);
             if (!oppCapsNow) {
@@ -465,9 +602,14 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
             }
         } else {
             // Spawned from t: becomes neutral meCan=0 at end of turn.
-            // Encourage keeping the other 2 corners empty (or stacking spawns on shared hub) for 1-turn reset!
+            int spNode = t.c[sc];
+            if (adjMask[spNode] != 0 && (adjMask[spNode] & ~t.mask) == 0) {
+                score -= 1800; // Never spawn on a degree-2 pocket corner with no 1-step exit out of t!
+            } else if (((interiorOwnedMask >> spNode) & 1ULL) && (t.mask & ~interiorOwnedMask) != 0) {
+                score -= 1100; // Prefer spawning on boundary hubs of owned clusters over interior pockets!
+            }
             int occ = (u0[t.h1] > 0) + (u0[t.h2] > 0) + (u0[t.h3] > 0);
-            score -= (occ - 1) * 140;
+            score -= (occ - 1) * 200;
         }
     }
 
@@ -510,14 +652,16 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         // Note: updateAllowedCaptures runs BEFORE surroundNodes, using pre-surround u0!
         if ((myOccMask & t.mask) == 0) {
             // ALL 3 CORNERS VACATED -> meCan resets to 1 at end of this turn!
-            if (myOccMask & triNbrUnion[tid]) {
-                score += 1850; // Unit poised 1 step away to recapture immediately next turn!
-            } else {
-                score += 1200;
+            uint64_t extRing = triNbrUnion[tid] & ~t.mask;
+            int poised = 0;
+            for (uint64_t pm = (myOccMask & extRing); pm && poised < 3; pm &= (pm - 1)) {
+                poised += u0[__builtin_ctzll(pm)];
             }
+            score += 1350 + min(3, poised) * 260;
         } else {
             int occ = (u0[t.h1] > 0) + (u0[t.h2] > 0) + (u0[t.h3] > 0);
-            score -= occ * 220;
+            int totU = u0[t.h1] + u0[t.h2] + u0[t.h3];
+            score -= 420 + occ * 280 + min(4, totU) * 80;
         }
     }
 
@@ -533,7 +677,7 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         score += 80000000LL + (int64_t)safeOwnedEnd * 50000LL + (int64_t)totalOwnedEnd * 10000LL;
     }
 
-    // Dynamic enemy ATTACK zone mask (accounts for triangles we neutralize/block this turn!)
+    // Dynamic enemy ATTACK zone mask (accounts for triangles we genuinely block against oppReach!)
     uint64_t activeArmedMask = 0, activePotMask = 0;
     for (int ei = 0; ei < E_cnt; ++ei) {
         const EnemyAtkTri& et = eatkTris[ei];
@@ -543,13 +687,23 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
                 else activePotMask |= et.zMask;
             }
         } else {
-            if ((owned0_rob & et.mask) == 0) {
+            bool weBlock = false;
+            int cs[3] = {et.c0, et.c1, et.c2};
+            for (int k = 0; k < 3; ++k) {
+                int c = cs[k];
+                int uAlive = ((killedMyMask >> c) & 1ULL) ? 0 : u0[c];
+                if (((owned0_rob >> c) & 1ULL) && uAlive >= oppReach[c]) {
+                    weBlock = true;
+                    break;
+                }
+            }
+            if (!weBlock) {
                 activePotMask |= et.zMask;
             }
         }
     }
 
-    // Evaluate occupied nodes: potential, dispersion, kill-zone discipline, 1-step surround danger
+    // Evaluate occupied nodes: potential, multi-front dispersion + forward march, anti-lock & kill-zone discipline
     uint64_t aliveOccMask = myOccMask & ~killedMyMask;
     for (uint64_t m = aliveOccMask; m; m &= (m - 1)) {
         int u = __builtin_ctzll(m);
@@ -558,33 +712,44 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         int useful = min(cnt, need);
         int extra = cnt - useful;
 
+        score -= (int64_t)cnt * minCapDist[u] * 85LL;
         score += (int64_t)useful * nodePotential[u];
         if (extra > 0) {
-            score += ((int64_t)extra * nodePotential[u]) >> 2;
-            score -= (int64_t)extra * extra * 85LL;
+            score += ((int64_t)extra * nodePotential[u]) >> 1;
+            score -= (int64_t)extra * extra * 48LL;
+        }
+
+        // Pure degree-2 ear & interior owned-cluster pocket guards
+        if (((pureEarMask >> u) & 1ULL) && oppUnits[u] == 0) {
+            score -= (int64_t)cnt * 950LL;
+        } else if (((interiorOwnedMask >> u) & 1ULL) && oppUnits[u] == 0) {
+            score -= (int64_t)cnt * 450LL;
         }
 
         // Enemy ATTACK kill-zone discipline (for Priority 0 at start of Turn T+1!)
         if (cnt >= 3) {
             if ((activeArmedMask >> u) & 1ULL) {
-                score -= (cnt == 3 ? 650LL : 850LL + (int64_t)(cnt - 3) * 5000LL);
+                score -= (cnt == 3 ? 800LL : 2600LL + (int64_t)(cnt - 3) * 5000LL);
             } else if ((activePotMask >> u) & 1ULL) {
-                score -= (cnt == 3 ? 300LL : 450LL + (int64_t)(cnt - 3) * 4200LL);
+                score -= (cnt == 3 ? 450LL : 2000LL + (int64_t)(cnt - 3) * 4400LL);
             }
         }
 
-        // 1-step dynamic enemy surround trap caution
+        // 1-step dynamic enemy surround trap caution (only fires when disconnected without safe supply neighbor!)
         if ((canBeSurr1StepMask >> u) & 1ULL) {
-            // Safe if we control at least one neighbor v with u0[v] >= oppReach[v]
             bool hasSafeEscape = false;
             for (int v : adj[u]) {
-                if (u0[v] >= oppReach[v] || (u0[v] >= oppUnits[v] + 1 && oppReach[v] <= 2)) {
+                if (u0[v] >= oppReach[v] || (oppReach[v] >= 4 && u0[v] >= oppUnits[v] + 3)) {
                     hasSafeEscape = true;
                     break;
                 }
             }
             if (!hasSafeEscape) {
-                score -= (int64_t)cnt * 650LL;
+                if (((degLe2Mask >> u) & 1ULL) || (adjMask[u] != 0 && (adjMask[u] & ~adv1_rob) == 0)) {
+                    score -= (int64_t)cnt * 1850LL;
+                } else {
+                    score -= (int64_t)cnt * 1150LL;
+                }
             }
         }
     }
@@ -917,9 +1082,12 @@ int main() {
             adjMask[h2] |= (1ULL << h1);
         }
         for (int u = 0; u < N; ++u) {
+            sort(adj[u].begin(), adj[u].end());
+            initAdj[u] = adj[u];
+            initAdjMask[u] = adjMask[u];
             moveOpts[u][0] = u;
             int cnt = 1;
-            for (int v : adj[u]) moveOpts[u][cnt++] = v;
+            for (int v : initAdj[u]) moveOpts[u][cnt++] = v;
             numMoveOpts[u] = cnt;
         }
 
@@ -927,6 +1095,7 @@ int main() {
 
         cin >> T_cnt;
         int initOppTris = 0;
+        int curMyTris = 0;
         for (int i = 0; i < T_cnt; ++i) {
             int h1, h2, h3, ow, mc, oc;
             cin >> h1 >> h2 >> h3 >> ow >> mc >> oc;
@@ -938,20 +1107,22 @@ int main() {
             allTris[i].meCan = (mc != 0);
             allTris[i].oppCan = (oc != 0);
             if (ow == 1) initOppTris++;
+            else if (ow == 0) curMyTris++;
         }
 
         int linkableCount;
         cin >> linkableCount;
+        vector<pair<int, int>> linkablePairs(linkableCount);
         for (int i = 0; i < linkableCount; ++i) {
-            int h1, h2;
-            cin >> h1 >> h2;
+            cin >> linkablePairs[i].first >> linkablePairs[i].second;
         }
 
         vector<string> actions;
+        vector<string> postMoveActions;
 
         // ====================================================================
         // PHASE 0: TACTICAL PRE-MOVE ATTACKS (Priority 0 in Referee!)
-        // Guaranteed hit on oppUnits[target] before opponent's MOVE!
+        // Positive-EV stack wipeouts & encirclement breakouts before MOVE!
         // ====================================================================
         int curMyTotal = totalMyUnitsInit;
         int curOppTotal = 0;
@@ -969,24 +1140,43 @@ int main() {
                     if (oppU < 2) continue;
                     if (!triHasNeighborNode(t, u)) continue;
 
-                    // Count how many enemy-owned triangles rely on u
                     int oppTrisOnU = 0;
                     for (int k = 0; k < T_cnt; ++k) {
                         if (allTris[k].owner == 1 && allTris[k].hasNode(u)) oppTrisOnU++;
                     }
 
+                    // Check if wiping u rescues a boxed-in friendly multi-unit stack
+                    int savedBoxed = 0;
+                    for (int v : adj[u]) {
+                        if (myUnits[v] >= 2 && !adj[v].empty()) {
+                            bool allBoxed = true;
+                            for (int nb : adj[v]) {
+                                if (oppUnits[nb] < myUnits[nb] || oppUnits[nb] == 0) {
+                                    allBoxed = false;
+                                    break;
+                                }
+                            }
+                            if (allBoxed) savedBoxed += min(4, myUnits[v]);
+                        }
+                    }
+
+                    int effKill = oppU + savedBoxed;
                     bool worthIt = false;
-                    if (oppU >= 4 && curMyTotal >= 6) worthIt = true;
-                    else if (oppU == 3 && (curMyTotal >= 28 || curMyTotal >= curOppTotal + 8 ||
-                             (initOppTris >= (int)(T_cnt * 0.65) && oppTrisOnU >= 2))) worthIt = true;
-                    else if (oppU == 2 && curMyTotal >= 40 && curMyTotal >= curOppTotal + 14 && oppTrisOnU >= 2) worthIt = true;
+                    if (effKill >= 6 && curMyTotal >= 8) worthIt = true;
+                    else if (effKill == 5 && curMyTotal >= 16 && (curMyTris >= 2 || curMyTotal >= curOppTotal)) worthIt = true;
+                    else if (effKill == 4 && curMyTotal >= 36 && curMyTotal >= curOppTotal + 2 && curMyTris >= 2) worthIt = true;
+                    else if (effKill == 3 && curMyTotal >= 46 && curMyTotal >= curOppTotal + 12 && curMyTris >= 4) worthIt = true;
+                    else if (oppU == 2 && curMyTotal >= 52 && curMyTotal >= curOppTotal + 18 && oppTrisOnU >= 2 && curMyTris >= 5) worthIt = true;
 
                     if (worthIt) {
-                        int val = oppU * 100 + oppTrisOnU * 35;
+                        int val = effKill * 120 + oppU * 40 + oppTrisOnU * 35;
                         // Bonus if attacking leaves 0 units on t so t.meCan resets to 1 immediately!
                         if (myUnits[t.h1] == 1 && myUnits[t.h2] == 1 && myUnits[t.h3] == 1 && !t.hasNode(u)) {
-                            val += 25;
+                            val += 40;
                         }
+                        // Prefer spending safe backline triangles over contested frontline ones
+                        int frontExposed = (oppUnits[t.h1] > 0) + (oppUnits[t.h2] > 0) + (oppUnits[t.h3] > 0);
+                        val -= frontExposed * 30;
                         if (val > bestVal) {
                             bestVal = val;
                             bestTri = i;
@@ -1003,10 +1193,202 @@ int main() {
             myUnits[bt.h2]--;
             myUnits[bt.h3]--;
             curMyTotal -= 3;
+            curMyTris--;
             curOppTotal -= oppUnits[bestTarget];
             oppUnits[bestTarget] = 0;
             bt.owner = -1;
             bt.meCan = false;
+        }
+
+        // ====================================================================
+        // PHASE 0.5: GOLD LEAGUE TACTICAL ADD_PATH (Prio 3) & REMOVE_PATH (Prio 4)
+        // Reserves 1 unit on each used corner so MOVE (Prio 1) never touches them!
+        // ====================================================================
+        bool graphChanged = false;
+        int initDomNow = 0;
+        while ((double)initDomNow < (double)T_cnt * 0.8) initDomNow++;
+        int maxAddPaths = (curMyTris >= initDomNow - 3) ? 0 :
+                          ((curMyTotal >= 50 && curMyTotal >= curOppTotal + 4 && curMyTris >= 5) ? 2 :
+                          ((curMyTotal >= 35 && curMyTotal >= curOppTotal - 4 && curMyTris >= 3) ? 1 : 0));
+
+        for (int addStep = 0; addStep < maxAddPaths && !linkablePairs.empty(); ++addStep) {
+            uint64_t oppNowMask = 0;
+            for (int u = 0; u < N; ++u) if (oppUnits[u] > 0) oppNowMask |= (1ULL << u);
+
+            int bestTri = -1, bestFrom = -1, bestTo = -1, bestVal = 0;
+            for (int i = 0; i < T_cnt; ++i) {
+                const Tri& t = allTris[i];
+                if (t.owner != 0) continue;
+                if (myUnits[t.h1] < 1 || myUnits[t.h2] < 1 || myUnits[t.h3] < 1) continue;
+
+                for (const auto& lp : linkablePairs) {
+                    for (int dir = 0; dir < 2; ++dir) {
+                        int fr = (dir == 0 ? lp.first : lp.second);
+                        int to = (dir == 0 ? lp.second : lp.first);
+                        if (!t.hasNode(fr) || t.hasNode(to)) continue;
+                        if (!canAddEdgeNow(fr, to)) continue;
+
+                        uint64_t common = adjMask[fr] & adjMask[to];
+                        int newTris = 0;
+                        uint64_t quadMask = (1ULL << fr) | (1ULL << to);
+                        for (uint64_t m = common; m; m &= (m - 1)) {
+                            int w = __builtin_ctzll(m);
+                            bool anyIn = false;
+                            for (int nd = 0; nd < N; ++nd) {
+                                if (nodeInsideTri(nd, fr, to, w)) { anyIn = true; break; }
+                            }
+                            if (!anyIn) {
+                                newTris++;
+                                quadMask |= (1ULL << w);
+                            }
+                        }
+                        if (newTris < 2) continue; // Only build double-triangle quad diagonals!
+                        if (quadMask & oppNowMask) continue; // Must be free of enemy units
+
+                        int nearOppCorners = 0;
+                        uint64_t supplyZone = quadMask;
+                        for (uint64_t m = quadMask; m; m &= (m - 1)) {
+                            int q = __builtin_ctzll(m);
+                            if (adjMask[q] & oppNowMask) nearOppCorners++;
+                            supplyZone |= initAdjMask[q];
+                        }
+                        if (nearOppCorners > 1) continue; // Keep new factories safe from enemy frontline
+
+                        int localSupply = 0;
+                        for (uint64_t m = supplyZone; m; m &= (m - 1)) {
+                            int u = __builtin_ctzll(m);
+                            localSupply += myUnits[u] - (t.hasNode(u) ? 1 : 0);
+                        }
+                        for (int k = 0; k < T_cnt; ++k) {
+                            if (k != i && allTris[k].owner == 0 && (allTris[k].mask & quadMask)) localSupply++;
+                        }
+                        if (localSupply < 5) continue; // Ensure SA can immediately capture both new triangles!
+
+                        int val = newTris * 1000 + min(9, localSupply) * 45 - dist2Nodes(fr, to) / 2000;
+                        if (myUnits[t.h1] == 1 && myUnits[t.h2] == 1 && myUnits[t.h3] == 1) val += 150;
+                        if (val > bestVal) {
+                            bestVal = val;
+                            bestTri = i;
+                            bestFrom = fr;
+                            bestTo = to;
+                        }
+                    }
+                }
+            }
+
+            if (bestTri == -1) break;
+            Tri& bt = allTris[bestTri];
+            int n2 = -1, n3 = -1;
+            for (int c : bt.c) {
+                if (c == bestFrom) continue;
+                if (n2 == -1) n2 = c; else n3 = c;
+            }
+            postMoveActions.push_back("ADD_PATH " + to_string(bestFrom) + " " + to_string(n2) + " " + to_string(n3) + " " + to_string(bestTo));
+            myUnits[bt.h1]--;
+            myUnits[bt.h2]--;
+            myUnits[bt.h3]--;
+            curMyTotal -= 3;
+            curMyTris--;
+            bt.owner = -1;
+            bt.meCan = false;
+            addGraphEdge(bestFrom, bestTo);
+            rebuildTrianglesInBot();
+            graphChanged = true;
+        }
+
+        // Priority 4: Tactical REMOVE_PATH (Surround-Kill Assassination or Double Enemy-Factory Cut)
+        if (curTurn >= 4 && curMyTotal >= 18 && curMyTris >= 2) {
+            int domNow = 0;
+            while ((double)domNow < (double)T_cnt * 0.8) domNow++;
+            int oppTrisNow = 0;
+            for (int k = 0; k < T_cnt; ++k) if (allTris[k].owner == 1) oppTrisNow++;
+
+            int bestTri = -1, bestFrom = -1, bestTo = -1, bestVal = 0;
+            for (int i = 0; i < T_cnt; ++i) {
+                const Tri& t = allTris[i];
+                if (t.owner != 0) continue;
+                if (myUnits[t.h1] < 1 || myUnits[t.h2] < 1 || myUnits[t.h3] < 1) continue;
+
+                for (int cIdx = 0; cIdx < 3; ++cIdx) {
+                    int fr = t.c[cIdx];
+                    for (int to : adj[fr]) {
+                        if (t.hasNode(to)) continue; // Must be external edge!
+
+                        int myDel = 0, oppDel = 0;
+                        for (int k = 0; k < T_cnt; ++k) {
+                            if (allTris[k].hasNode(fr) && allTris[k].hasNode(to)) {
+                                if (allTris[k].owner == 0) myDel++;
+                                else if (allTris[k].owner == 1) oppDel++;
+                            }
+                        }
+                        if (myDel > 0) continue;
+
+                        int surrKill = 0;
+                        for (int pass = 0; pass < 2; ++pass) {
+                            int v = (pass == 0 ? to : fr);
+                            int other = (pass == 0 ? fr : to);
+                            if (oppUnits[v] >= 4 && adj[v].size() >= 2) {
+                                int remOther = myUnits[other] - (t.hasNode(other) ? 1 : 0);
+                                if (remOther > oppUnits[other]) continue;
+                                bool allOtherHeld = true;
+                                for (int nb : adj[v]) {
+                                    if (nb == other) continue;
+                                    int remNb = myUnits[nb] - (t.hasNode(nb) ? 1 : 0);
+                                    int adjOpp = oppUnits[nb];
+                                    for (int w : adj[nb]) if (w != v) adjOpp += oppUnits[w];
+                                    if (remNb <= oppUnits[nb] || remNb < adjOpp) {
+                                        allOtherHeld = false;
+                                        break;
+                                    }
+                                }
+                                if (allOtherHeld) surrKill += oppUnits[v];
+                            }
+                        }
+
+                        bool worthCut = false;
+                        int val = 0;
+                        if (surrKill >= 4 && (surrKill >= 5 || curMyTotal >= 24)) {
+                            worthCut = true;
+                            val = surrKill * 1000 + oppDel * 350;
+                        } else if (oppDel >= 2 && (oppTrisNow >= domNow - 4 ||
+                                  (curMyTotal >= 46 && curMyTotal >= curOppTotal + 8 && curMyTris >= 4))) {
+                            worthCut = true;
+                            val = 2500 + oppDel * 500;
+                        }
+
+                        if (worthCut && val > bestVal) {
+                            bestVal = val;
+                            bestTri = i;
+                            bestFrom = fr;
+                            bestTo = to;
+                        }
+                    }
+                }
+            }
+
+            if (bestTri != -1) {
+                Tri& bt = allTris[bestTri];
+                int n2 = -1, n3 = -1;
+                for (int c : bt.c) {
+                    if (c == bestFrom) continue;
+                    if (n2 == -1) n2 = c; else n3 = c;
+                }
+                postMoveActions.push_back("REMOVE_PATH " + to_string(bestFrom) + " " + to_string(n2) + " " + to_string(n3) + " " + to_string(bestTo));
+                myUnits[bt.h1]--;
+                myUnits[bt.h2]--;
+                myUnits[bt.h3]--;
+                curMyTotal -= 3;
+                curMyTris--;
+                bt.owner = -1;
+                bt.meCan = false;
+                removeGraphEdge(bestFrom, bestTo);
+                rebuildTrianglesInBot();
+                graphChanged = true;
+            }
+        }
+
+        if (graphChanged) {
+            computeAllPairsBFS();
         }
 
         // Precompute bitmasks, potentials, and partitioned triangle lists
@@ -1054,7 +1436,9 @@ int main() {
                     int bestC = 0, bestP = -999999;
                     for (int k = 0; k < 3; ++k) {
                         int c = t.c[k];
-                        int p = nodePotential[c] - (armedEnemyAtkZone[c] ? 800 : 0);
+                        int pocketPen = (adjMask[c] != 0 && (adjMask[c] & ~t.mask) == 0) ? 2000 :
+                                        ((((interiorOwnedMask >> c) & 1ULL) && (t.mask & ~interiorOwnedMask) != 0) ? 1100 : 0);
+                        int p = nodePotential[c] - (armedEnemyAtkZone[c] ? 800 : 0) - pocketPen;
                         if (p > bestP) { bestP = p; bestC = k; }
                     }
                     curSpawn[j] = bestC;
@@ -1108,7 +1492,7 @@ int main() {
             double saBudgetMs = maxTimeMs - 3.0; // Reserve final 3 ms for deterministic polish
             int iter = 0;
 
-            int savedIdx[16], savedVal[16], nSaved = 0;
+            int savedIdx[64], savedVal[64], nSaved = 0;
             int savedSpIdx[16], savedSpVal[16], nSavedSp = 0;
 
             while (true) {
@@ -1129,7 +1513,7 @@ int main() {
                 nSavedSp = 0;
                 int roll = rng.nextInt(100);
 
-                if (roll < 45 && M_cnt > 0) {
+                if (roll < 42 && M_cnt > 0) {
                     // Op 1: Single unit move
                     int i = rng.nextInt(M_cnt);
                     int u = unitLocs[i];
@@ -1140,14 +1524,14 @@ int main() {
                     if (cand == curDest[i]) continue;
                     savedIdx[nSaved] = i; savedVal[nSaved] = curDest[i]; nSaved++;
                     curDest[i] = cand;
-                } else if (roll < 65 && S_cnt > 0) {
+                } else if (roll < 61 && S_cnt > 0) {
                     // Op 2: Single spawn change
                     int j = rng.nextInt(S_cnt);
                     int cand = rng.nextInt(4) - 1;
                     if (cand == curSpawn[j]) continue;
                     savedSpIdx[nSavedSp] = j; savedSpVal[nSavedSp] = curSpawn[j]; nSavedSp++;
                     curSpawn[j] = cand;
-                } else if (roll < 86 && C_cnt > 0 && (M_cnt + S_cnt) > 0) {
+                } else if (roll < 81 && C_cnt > 0 && (M_cnt + S_cnt) > 0) {
                     // Op 3: Exact 3-Corner Relay / Slot Matcher Macro-Move!
                     const Tri& t = allTris[capTriIdx[rng.nextInt(C_cnt)]];
                     bool lockU[512];
@@ -1162,7 +1546,7 @@ int main() {
                         int c = t.c[k];
                         for (int i = 0; i < M_cnt; ++i) {
                             int u = unitLocs[i];
-                            if (u == c || ((adjMask[u] >> c) & 1ULL)) reachCnt[k]++;
+                            if (u == c || ((initAdjMask[u] >> c) & 1ULL)) reachCnt[k]++;
                         }
                         for (int j = 0; j < S_cnt; ++j) {
                             if (allTris[ownedTriIdx[j]].hasNode(c)) reachCnt[k]++;
@@ -1204,8 +1588,8 @@ int main() {
                                     int i = (startOff + step) % M_cnt;
                                     if (lockU[i]) continue;
                                     int u = unitLocs[i];
-                                    if (u == corner || ((adjMask[u] >> corner) & 1ULL)) {
-                                        if (nSaved < 15) {
+                                    if (u == corner || ((initAdjMask[u] >> corner) & 1ULL)) {
+                                        if (nSaved < 60) {
                                             if (curDest[i] != corner) {
                                                 savedIdx[nSaved] = i; savedVal[nSaved] = curDest[i]; nSaved++;
                                                 curDest[i] = corner;
@@ -1243,10 +1627,10 @@ int main() {
                         }
                     }
                     if (nSaved == 0 && nSavedSp == 0) continue;
-                } else if (roll < 94 && R_cnt > 0) {
+                } else if (roll < 88 && R_cnt > 0) {
                     // Op 4: Coordinated meCan == 0 Triangle Evacuation Macro-Move!
                     const Tri& t = allTris[resetTriIdx[rng.nextInt(R_cnt)]];
-                    for (int i = 0; i < M_cnt && nSaved < 15; ++i) {
+                    for (int i = 0; i < M_cnt && nSaved < 60; ++i) {
                         if (t.hasNode(curDest[i])) {
                             int u = unitLocs[i];
                             // Pick an option for u outside t
@@ -1273,7 +1657,7 @@ int main() {
                         }
                     }
                     if (nSaved == 0 && nSavedSp == 0) continue;
-                } else if (M_cnt >= 2) {
+                } else if (roll < 92 && M_cnt >= 2) {
                     // Op 5: 2-Unit Conveyor / Relay Move
                     int i1 = rng.nextInt(M_cnt);
                     int u1 = unitLocs[i1];
@@ -1291,6 +1675,28 @@ int main() {
                             break;
                         }
                     }
+                } else if (M_cnt >= 2) {
+                    // Op 6: Multi-Unit Stack Breakout / Coordinated Assault Move!
+                    int i0 = rng.nextInt(M_cnt);
+                    int u = unitLocs[i0];
+                    if (numMoveOpts[u] <= 1) continue;
+                    int lo = i0, hi = i0;
+                    while (lo > 0 && unitLocs[lo - 1] == u) lo--;
+                    while (hi + 1 < M_cnt && unitLocs[hi + 1] == u) hi++;
+                    int stackSz = hi - lo + 1;
+                    if (stackSz < 2) continue;
+
+                    int cand = moveOpts[u][rng.nextInt(numMoveOpts[u])];
+                    int targetAmt = (rng.nextInt(2) == 0) ? stackSz : clamp(oppRobustUnits[cand] + 1, 2, stackSz);
+                    int moved = 0;
+                    for (int idx = lo; idx <= hi && moved < targetAmt && nSaved < 62; ++idx) {
+                        if (curDest[idx] != cand) {
+                            savedIdx[nSaved] = idx; savedVal[nSaved] = curDest[idx]; nSaved++;
+                            curDest[idx] = cand;
+                        }
+                        moved++;
+                    }
+                    if (nSaved == 0) continue;
                 } else {
                     continue;
                 }
@@ -1368,7 +1774,7 @@ int main() {
             if (fr != to) moveCount[fr][to]++;
         }
         for (int fr = 0; fr < N; ++fr) {
-            for (int v : adj[fr]) {
+            for (int v : initAdj[fr]) {
                 if (moveCount[fr][v] > 0) {
                     actions.push_back("MOVE " + to_string(fr) + " " + to_string(v) + " " + to_string(moveCount[fr][v]));
                 }
@@ -1387,6 +1793,11 @@ int main() {
                 actions.push_back("SPAWN " + to_string(sp) + " " + to_string(c2) + " " + to_string(c3));
                 spawnsUsed++;
             }
+        }
+
+        // Emit Priority 3 & 4 Gold League commands (ADD_PATH / REMOVE_PATH)
+        for (const auto& pma : postMoveActions) {
+            actions.push_back(pma);
         }
 
         double usedMs = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - turnStart).count();

@@ -176,7 +176,21 @@ struct Board {
         nodes[v].neighbors.erase(remove(nodes[v].neighbors.begin(), nodes[v].neighbors.end(), u), nodes[v].neighbors.end());
     }
     bool hasEdge(int u, int v) const {
+        if (u < 0 || v < 0 || u >= (int)nodes.size() || v >= (int)nodes.size()) return false;
         return binary_search(nodes[u].neighbors.begin(), nodes[u].neighbors.end(), v);
+    }
+
+    bool canConnect(int u, int v) const {
+        if (u < 0 || v < 0 || u >= (int)nodes.size() || v >= (int)nodes.size() || u == v) return false;
+        if (hasEdge(u, v)) return false;
+        if (dist(nodes[u], nodes[v]) > MAX_PATH_LENGTH) return false;
+        for (const auto& n1 : nodes) {
+            for (int n2id : n1.neighbors) {
+                if (n2id <= n1.id) continue;
+                if (isCrossing(nodes[u], nodes[v], n1, nodes[n2id])) return false;
+            }
+        }
+        return true;
     }
 
     vector<int> bfs(int start, int blocked = -1) const {
@@ -429,7 +443,16 @@ struct Board {
             int ow = (t.owner == -1 ? -1 : (t.owner == p ? 0 : 1));
             ss << t.h1 << " " << t.h2 << " " << t.h3 << " " << ow << " " << (t.canCap[p] ? 1 : 0) << " " << (t.canCap[opp] ? 1 : 0) << "\n";
         }
-        ss << "0\n"; // Silver league allowNewEdges = false
+        vector<pair<int,int>> canLinks;
+        for (int i = 0; i < (int)nodes.size(); ++i) {
+            for (int j = i + 1; j < (int)nodes.size(); ++j) {
+                if (!hasEdge(i, j) && canConnect(i, j)) {
+                    canLinks.push_back({i, j});
+                }
+            }
+        }
+        ss << canLinks.size() << "\n";
+        for (auto& cl : canLinks) ss << cl.first << " " << cl.second << "\n";
         return ss.str();
     }
 
@@ -469,7 +492,7 @@ struct Board {
     }
 
     struct ParsedCmd {
-        int type; // 0=ATTACK, 1=MOVE, 2=SPAWN
+        int type; // 0=ATTACK, 1=MOVE, 2=SPAWN, 3=ADD_PATH, 4=REMOVE_PATH
         int a, b, c, d;
     };
 
@@ -499,6 +522,14 @@ struct Board {
                     int sp, n2, n3;
                     if (!(ls >> sp >> n2 >> n3)) { foulPlayer = p; return false; }
                     cmds[p].push_back({2, sp, n2, n3, 0});
+                } else if (kw == "ADD_PATH") {
+                    int fr, n2, n3, to;
+                    if (!(ls >> fr >> n2 >> n3 >> to)) { foulPlayer = p; return false; }
+                    cmds[p].push_back({3, fr, n2, n3, to});
+                } else if (kw == "REMOVE_PATH") {
+                    int fr, n2, n3, to;
+                    if (!(ls >> fr >> n2 >> n3 >> to)) { foulPlayer = p; return false; }
+                    cmds[p].push_back({4, fr, n2, n3, to});
                 } else {
                     foulPlayer = p;
                     return false;
@@ -568,6 +599,74 @@ struct Board {
             }
         }
 
+        // Priority 3: ADD_PATH (sorted by dist2(from, to) ascending, sequential per player)
+        vector<ParsedCmd> addCmds[2];
+        for (int p = 0; p < 2; ++p) {
+            for (const auto& cm : cmds[p]) {
+                if (cm.type == 3 && cm.a >= 0 && cm.a < (int)nodes.size() && cm.d >= 0 && cm.d < (int)nodes.size()) {
+                    addCmds[p].push_back(cm);
+                }
+            }
+            stable_sort(addCmds[p].begin(), addCmds[p].end(), [&](const ParsedCmd& x, const ParsedCmd& y) {
+                return dist2(nodes[x.a], nodes[x.d]) < dist2(nodes[y.a], nodes[y.d]);
+            });
+        }
+        size_t idxE[2] = {0, 0};
+        while (true) {
+            vector<pair<int, ParsedCmd>> batch;
+            for (int p = 0; p < 2; ++p) {
+                while (idxE[p] < addCmds[p].size()) {
+                    auto cm = addCmds[p][idxE[p]++];
+                    int tid = findTri(cm.a, cm.b, cm.c);
+                    if (tid >= 0 && (cm.a == cm.b || cm.a == cm.c ? false : true) &&
+                        triangles[tid].hasNode(cm.a) && triCanUse(tid, p, 1) && canConnect(cm.a, cm.d)) {
+                        batch.push_back({p, cm});
+                        break;
+                    }
+                }
+            }
+            if (batch.empty()) break;
+            stable_sort(batch.begin(), batch.end(), [&](const auto& x, const auto& y) {
+                return dist2(nodes[x.second.a], nodes[x.second.d]) < dist2(nodes[y.second.a], nodes[y.second.d]);
+            });
+            for (auto& [p, cm] : batch) {
+                if (!canConnect(cm.a, cm.d)) continue;
+                int tid = findTri(cm.a, cm.b, cm.c);
+                if (tid >= 0 && triangles[tid].owner == p) {
+                    triUse(tid, 1);
+                    addNeighbor(cm.a, cm.d);
+                    updateTriangles();
+                }
+            }
+        }
+
+        // Priority 4: REMOVE_PATH (sequential per player)
+        size_t idxR[2] = {0, 0};
+        while (true) {
+            vector<pair<int, ParsedCmd>> batch;
+            for (int p = 0; p < 2; ++p) {
+                while (idxR[p] < cmds[p].size()) {
+                    auto cm = cmds[p][idxR[p]++];
+                    if (cm.type != 4) continue;
+                    int tid = findTri(cm.a, cm.b, cm.c);
+                    if (tid >= 0 && triangles[tid].hasNode(cm.a) && triCanUse(tid, p, 1) &&
+                        hasEdge(cm.a, cm.d) && !triangles[tid].hasNode(cm.d)) {
+                        batch.push_back({p, cm});
+                        break;
+                    }
+                }
+            }
+            if (batch.empty()) break;
+            for (auto& [p, cm] : batch) {
+                int tid = findTri(cm.a, cm.b, cm.c);
+                if (tid >= 0 && triangles[tid].owner == p) {
+                    triUse(tid, 1);
+                    removeNeighbor(cm.a, cm.d);
+                    updateTriangles();
+                }
+            }
+        }
+
         killedSurrounded = false;
         while (finalizeTurn(true)) ;
         return true;
@@ -582,7 +681,7 @@ struct MatchResult {
     double maxMs0 = 0, maxMs1 = 0;
 };
 
-MatchResult runGame(const Board& initBoard, const string& cmd0, const string& cmd1) {
+MatchResult runGame(const Board& initBoard, const string& cmd0, const string& cmd1, bool verbose = false) {
     Board b = initBoard;
     BotProc p0, p1;
     p0.start(cmd0);
@@ -593,6 +692,9 @@ MatchResult runGame(const Board& initBoard, const string& cmd0, const string& cm
         int u[2] = {0, 0}, tr[2] = {0, 0};
         for (const auto& nd : b.nodes) { u[0] += nd.units[0]; u[1] += nd.units[1]; }
         for (const auto& t : b.triangles) if (t.owner != -1) tr[t.owner]++;
+        if (verbose) {
+            cout << "  T" << turn << ": U=[" << u[0] << "," << u[1] << "] Tri=[" << tr[0] << "," << tr[1] << "/" << b.triangles.size() << "] Sc=[" << b.scores[0] << "," << b.scores[1] << "]\n";
+        }
 
         // Check game end conditions (Referee.java lines 60-72)
         bool dead0 = false, dead1 = false;
@@ -636,6 +738,9 @@ MatchResult runGame(const Board& initBoard, const string& cmd0, const string& cm
         }
 
         int foul = -1;
+        if (verbose) {
+            cout << "    P0: " << out0 << "\n    P1: " << out1 << "\n";
+        }
         if (!b.applyTurn(out0, out1, foul)) {
             b.scores[foul] = -1;
             res.turns = turn;
@@ -661,6 +766,15 @@ int main(int argc, char** argv) {
     string botA = argv[1];
     string botB = argv[2];
     int numSeeds = (argc >= 4 ? stoi(argv[3]) : 10);
+    int onlySeed = (argc >= 5 ? stoi(argv[4]) : -1);
+
+    if (onlySeed > 0) {
+        Board initB;
+        initB.generate(100000ULL + (uint64_t)onlySeed * 13337ULL);
+        auto r1 = runGame(initB, botA, botB, true);
+        cout << "Result: " << r1.score0 << " vs " << r1.score1 << " (" << r1.reason << ")\n";
+        return 0;
+    }
 
     int winsA = 0, winsB = 0, draws = 0;
     double worstMsA = 0, worstMsB = 0;
