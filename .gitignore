@@ -20,6 +20,9 @@ test_t3_bench
 *.log
 tg_*.json
 current_*.json
+v3*.json
+test_*.json
+test_vickingur.json
 
 # Python cache
 __pycache__/
