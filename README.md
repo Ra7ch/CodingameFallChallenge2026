@@ -3,9 +3,9 @@
 Repository for the **CodinGame Fall Challenge 2026** bot by `Ra7ch` (`Ra07Ch`).
 
 ## Current Status
-* **League**: Gold — **Rank #87 / 862** (`#87 / 423` in Gold, `score: 23.28`, `18W / 12L` (60% win rate); Legend League opens `2026-11-07 09:00 UTC`)
+* **League**: Gold — **Rank #82 / 862** (`#82 / 423` in Gold, `score: 23.54`, `18W / 12L` (60% win rate); Legend League opens `2026-11-07 09:00 UTC`)
 * **Latest Bot Version**: `v3.7` ([`bot.cpp`](bot.cpp), archived in [`bot_v3_7_sub.cpp`](bot_v3_7_sub.cpp))
-* **Active Arena Submission ID**: `41646650` (Score: `23.28`, climbed from `v3.3` at `#104` / `20.75` and `v2.9` at `#130` / `19.42`)
+* **Active Arena Submission ID**: `41646650` (Score: `23.54`, climbed from `v3.3` at `#104` / `20.75` and `v2.9` at `#130` / `19.42`)
 * **Target Objective**: Push into **Top 30 in Gold League** (Score $\ge 28.29$).
 
 ---
@@ -90,4 +90,4 @@ Recent arena victories include top Gold competitors:
 * `bot_v3_4_sub.cpp`: Multi-ply opening search temporal balancing and edge creation validation (`sub: 41645231`).
 * `bot_v3_5_sub.cpp`: Opening timing tuning, army target calibration (`sub: 41645744`, Gold Rank #85, score `22.80`).
 * `bot_v3_6_sub.cpp`: 40ms wall-clock search budget scaling (~15k SA iterations) (`sub: 41646617`, peaked at Gold Rank #67).
-* `bot_v3_7_sub.cpp`: 40ms SA budget + Dynamic Army Scaling (68–96 units) (`sub: 41646650`, Gold Rank #87 / 423, score `23.28`).
+* `bot_v3_7_sub.cpp`: 40ms SA budget + Dynamic Army Scaling (68–96 units) (`sub: 41646650`, Gold Rank #82 / 423, score `23.54`).

@@ -6,8 +6,8 @@
 | Metric | Status |
 | :--- | :--- |
 | **Active Submission** | `41646650` (`v3.7` / [`bot_v3_7_sub.cpp`](file:///home/kali/Desktop/CodingameFallChallenge2026/bot_v3_7_sub.cpp)) |
-| **Gold League Rank** | **`#86 / 423`** (`#86 / 862` overall) |
-| **Contest Rating (TrueSkill)** | **`23.15`** |
+| **Gold League Rank** | **`#82 / 423`** (`#82 / 862` overall) |
+| **Contest Rating (TrueSkill)** | **`23.54`** |
 | **Top 30 Cutoff** | **`28.29`** (`#30 Rikus`, score 28.29; `#23 laconic_pixel`, score 29.26) |
 | **Version History** | `v1` $\to$ `v2.9` $\to$ `v3.3` (104) $\to$ `v3.4` (85) $\to$ `v3.5` (77) $\to$ `v3.6` (67 in-progress) $\to$ `v3.7` (84) |
 | **Git Repository** | Up to date & pushed to [`Ra7ch/CodingameFallChallenge2026`](https://github.com/Ra7ch/CodingameFallChallenge2026) (commit `249ebe8`) |
