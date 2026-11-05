@@ -66,6 +66,7 @@ Tri allTris[MAX_T];
 int myUnits[MAX_N];
 int oppUnits[MAX_N];
 int oppRobustUnits[MAX_N];
+int oppPredUnits[MAX_N];
 int oppReach[MAX_N];
 bool armedEnemyAtkZone[MAX_N];
 bool potentialEnemyAtkZone[MAX_N];
@@ -82,6 +83,7 @@ EnemyAtkTri eatkTris[MAX_T];
 
 uint64_t oppHasUnitsMask;
 uint64_t oppRobustHasUnitsMask;
+uint64_t oppPredHasUnitsMask;
 uint64_t possibleSelfSurrMask;
 uint64_t canBeSurr1StepMask;
 uint64_t pureEarMask;
@@ -442,6 +444,309 @@ void precomputeTurnMetrics() {
         minCapDist[u] = bestDCap;
         nodePotential[u] = (int)llround(pot);
     }
+
+    // Fast 1-ply opponent action prediction (conserves real opponent units + spawns, ~0.15ms)
+    {
+        auto oppT0 = chrono::high_resolution_clock::now();
+        double oppBudgetMs = (curTurn == 1 ? 10.0 : 0.65);
+        int O_cnt = 0;
+        int oppLocs[512];
+        uint64_t myHasMask = 0;
+        for (int u = 0; u < N; ++u) {
+            if (myUnits[u] > 0) myHasMask |= (1ULL << u);
+            for (int k = 0; k < oppUnits[u] && O_cnt < 512; ++k) {
+                oppLocs[O_cnt++] = u;
+            }
+        }
+        int OS_cnt = 0, OC_cnt = 0, OR_cnt = 0;
+        int oppOwnedIdx[MAX_T], oppCapIdx[MAX_T], oppResetIdx[MAX_T];
+        for (int i = 0; i < T_cnt; ++i) {
+            const Tri& t = allTris[i];
+            if (t.owner == 1) oppOwnedIdx[OS_cnt++] = i;
+            else if (t.oppCan) oppCapIdx[OC_cnt++] = i;
+            else if (t.owner == -1 && !t.oppCan) oppResetIdx[OR_cnt++] = i;
+        }
+        if (O_cnt == 0 && OS_cnt == 0) {
+            memset(oppPredUnits, 0, sizeof(oppPredUnits));
+            oppPredHasUnitsMask = 0;
+        } else {
+            uint64_t oppSelfSurrMask = 0;
+            for (int u = 0; u < N; ++u) {
+                if (adjMask[u] != 0 && (adjMask[u] & ~myHasMask) == 0) {
+                    oppSelfSurrMask |= (1ULL << u);
+                }
+            }
+            int oppPot[MAX_N], oppMinD[MAX_N];
+            bool myHoldThreat = (M_cnt >= 34 || S_cnt >= domThreshold - 5);
+            for (int u = 0; u < N; ++u) {
+                double pot = 0.0;
+                int bestD = 10;
+                for (int ci = 0; ci < OC_cnt; ++ci) {
+                    const Tri& t = allTris[oppCapIdx[ci]];
+                    int d = min({distMat[u][t.h1], distMat[u][t.h2], distMat[u][t.h3]});
+                    if (d < bestD) bestD = d;
+                    if (d >= 12) continue;
+                    double attr = (t.owner == 0 && myHoldThreat) ? 270.0 : 205.0;
+                    int nearC = 0;
+                    for (int c : t.c) {
+                        bool hn = (oppUnits[c] > myUnits[c]);
+                        if (!hn) {
+                            for (int nb : adj[c]) if (oppUnits[nb] > 0) { hn = true; break; }
+                        }
+                        if (hn) nearC++;
+                    }
+                    attr += nearC * 55.0;
+                    pot += attr * decay[d];
+                }
+                oppMinD[u] = bestD;
+                oppPot[u] = (int)llround(pot);
+            }
+
+            int oppTarget = clamp(max(baseCap, M_cnt + 6), 42, 64);
+
+            auto evalOpp = [&](const int* oDest, const int* oSp) -> int64_t {
+                int u1[MAX_N];
+                memset(u1, 0, N * sizeof(int));
+                uint64_t oOcc = 0;
+                for (int i = 0; i < O_cnt; ++i) {
+                    int d = oDest[i];
+                    u1[d]++;
+                    oOcc |= (1ULL << d);
+                }
+                for (int j = 0; j < OS_cnt; ++j) {
+                    if (oSp[j] >= 0) {
+                        int spN = allTris[oppOwnedIdx[j]].c[oSp[j]];
+                        u1[spN]++;
+                        oOcc |= (1ULL << spN);
+                    }
+                }
+                uint64_t a1 = 0, a0 = 0;
+                for (uint64_t m = oOcc; m; m &= (m - 1)) {
+                    int u = __builtin_ctzll(m);
+                    if (u1[u] > myUnits[u]) a1 |= (1ULL << u);
+                }
+                for (uint64_t m = myHasMask; m; m &= (m - 1)) {
+                    int u = __builtin_ctzll(m);
+                    if (myUnits[u] > u1[u]) a0 |= (1ULL << u);
+                }
+                uint64_t kOppMask = 0, kMeMask = 0;
+                int kOpp = 0, kMe = 0;
+                for (uint64_t m = (oOcc & oppSelfSurrMask); m; m &= (m - 1)) {
+                    int u = __builtin_ctzll(m);
+                    if ((adjMask[u] & ~a0) == 0) { kOpp += u1[u]; kOppMask |= (1ULL << u); }
+                }
+                for (uint64_t m = myHasMask; m; m &= (m - 1)) {
+                    int u = __builtin_ctzll(m);
+                    if (adjMask[u] != 0 && (adjMask[u] & ~a1) == 0) {
+                        int thin = 0;
+                        for (int v : adj[u]) if (u1[v] <= myUnits[v] + 1) thin++;
+                        if (thin == 0 || (myUnits[u] == 1 && thin == 1 && adj[u].size() >= 4)) {
+                            kMe += myUnits[u];
+                            kMeMask |= (1ULL << u);
+                        }
+                    }
+                }
+                if (kOppMask | kMeMask) {
+                    a1 &= ~kOppMask;
+                    a0 &= ~kMeMask;
+                    for (uint64_t m = (kMeMask & oOcc & ~kOppMask); m; m &= (m - 1)) {
+                        int u = __builtin_ctzll(m);
+                        if (u1[u] > 0) a1 |= (1ULL << u);
+                    }
+                    for (uint64_t m = (kOppMask & myHasMask & ~kMeMask); m; m &= (m - 1)) {
+                        int u = __builtin_ctzll(m);
+                        if (myUnits[u] > 0) a0 |= (1ULL << u);
+                    }
+                }
+                uint64_t ow1 = 0;
+                for (int u = 0; u < N; ++u) {
+                    uint64_t am = adjMask[u];
+                    bool o1 = false, o0 = false;
+                    if (am != 0) {
+                        if ((am & ~a1) == 0 && (myUnits[u] == 0 || ((kMeMask >> u) & 1ULL))) o1 = true;
+                        else if ((am & ~a0) == 0) o0 = true;
+                    }
+                    if (!o1 && !o0) o1 = (a1 >> u) & 1ULL;
+                    if (o1) ow1 |= (1ULL << u);
+                }
+
+                int64_t sc = (int64_t)kMe * 3400LL - (int64_t)kOpp * 5500LL;
+                int totOw = 0;
+                for (int j = 0; j < OS_cnt; ++j) {
+                    if (oSp[j] == -1) { totOw++; sc += 2200; }
+                    else {
+                        int uAfter = O_cnt + j + 1;
+                        sc += (uAfter <= 32 ? 5400 : (uAfter <= oppTarget ? 3600 : 900));
+                    }
+                }
+                for (int ci = 0; ci < OC_cnt; ++ci) {
+                    const Tri& t = allTris[oppCapIdx[ci]];
+                    uint64_t m = ow1 & t.mask;
+                    if (m == t.mask) {
+                        totOw++;
+                        sc += 4500 + (t.owner == 0 ? 500 : 0);
+                    } else {
+                        int cnt = __builtin_popcountll(m);
+                        if (cnt == 2) sc += 300;
+                        else if (cnt == 1) sc += 55;
+                    }
+                }
+                for (int ri = 0; ri < OR_cnt; ++ri) {
+                    const Tri& t = allTris[oppResetIdx[ri]];
+                    if ((oOcc & t.mask) == 0) sc += 1250;
+                    else {
+                        int occ = (u1[t.h1] > 0) + (u1[t.h2] > 0) + (u1[t.h3] > 0);
+                        sc -= 350 + occ * 250;
+                    }
+                }
+                if (totOw >= domThreshold) sc += 80000000LL + totOw * 20000LL;
+
+                uint64_t aliveO = oOcc & ~kOppMask;
+                for (uint64_t m = aliveO; m; m &= (m - 1)) {
+                    int u = __builtin_ctzll(m);
+                    int cnt = u1[u];
+                    int useful = min(cnt, myUnits[u] + 1);
+                    int extra = cnt - useful;
+                    sc += (int64_t)useful * oppPot[u] - (int64_t)cnt * oppMinD[u] * 85LL;
+                    if (extra > 0) {
+                        sc += ((int64_t)extra * oppPot[u]) >> 2;
+                        sc -= (int64_t)extra * extra * 65LL;
+                    }
+                }
+                return sc;
+            };
+
+            vector<int> oDest(O_cnt);
+            vector<int> oSp(OS_cnt, -1);
+            for (int i = 0; i < O_cnt; ++i) oDest[i] = oppLocs[i];
+            for (int j = 0; j < OS_cnt; ++j) {
+                if (O_cnt + j < oppTarget) {
+                    const Tri& t = allTris[oppOwnedIdx[j]];
+                    int bestC = 0, bestP = -999999;
+                    for (int k = 0; k < 3; ++k) {
+                        int c = t.c[k];
+                        int pen = (adjMask[c] != 0 && (adjMask[c] & ~t.mask) == 0) ? 1800 : 0;
+                        int p = oppPot[c] - pen;
+                        if (p > bestP) { bestP = p; bestC = k; }
+                    }
+                    oSp[j] = bestC;
+                }
+            }
+            int64_t bestOppSc = evalOpp(oDest.data(), oSp.data());
+
+            // Greedy 3-corner triangle capture pass for opponent
+            int sortedOC[MAX_T];
+            for (int ci = 0; ci < OC_cnt; ++ci) sortedOC[ci] = oppCapIdx[ci];
+            sort(sortedOC, sortedOC + OC_cnt, [&](int a, int b) {
+                const Tri& ta = allTris[a]; const Tri& tb = allTris[b];
+                return (oppPot[ta.h1] + oppPot[ta.h2] + oppPot[ta.h3]) > (oppPot[tb.h1] + oppPot[tb.h2] + oppPot[tb.h3]);
+            });
+            bool lockO[512] = {false};
+            bool lockOS[MAX_T] = {false};
+            for (int ci = 0; ci < OC_cnt; ++ci) {
+                if ((ci & 7) == 0 && chrono::duration<double, milli>(chrono::high_resolution_clock::now() - oppT0).count() >= oppBudgetMs) break;
+                const Tri& t = allTris[sortedOC[ci]];
+                int svIdx[16], svVal[16], nSv = 0;
+                int svSpIdx[8], svSpVal[8], nSvSp = 0;
+                bool tmpLockO[32]; int nTmpO = 0;
+                bool tmpLockS[16]; int nTmpS = 0;
+                int tmpOList[32], tmpSList[16];
+                bool okAll = true;
+                for (int k = 0; k < 3; ++k) {
+                    int corner = t.c[k];
+                    int req = myUnits[corner] + 1;
+                    if (adjMask[corner] != 0 && (adjMask[corner] & ~t.mask) == 0 && myUnits[corner] == 0) req = 0;
+                    int asg = 0;
+                    for (int i = 0; i < O_cnt && asg < req; ++i) {
+                        if (!lockO[i] && oDest[i] == corner) {
+                            lockO[i] = true; tmpOList[nTmpO++] = i; asg++;
+                        }
+                    }
+                    for (int j = 0; j < OS_cnt && asg < req; ++j) {
+                        if (!lockOS[j] && oSp[j] >= 0 && allTris[oppOwnedIdx[j]].c[oSp[j]] == corner) {
+                            lockOS[j] = true; tmpSList[nTmpS++] = j; asg++;
+                        }
+                    }
+                    for (int i = 0; i < O_cnt && asg < req; ++i) {
+                        if (lockO[i]) continue;
+                        int u = oppLocs[i];
+                        if ((u == corner || ((initAdjMask[u] >> corner) & 1ULL)) && nSv < 16 && nTmpO < 32) {
+                            svIdx[nSv] = i; svVal[nSv] = oDest[i]; nSv++;
+                            oDest[i] = corner;
+                            lockO[i] = true; tmpOList[nTmpO++] = i; asg++;
+                        }
+                    }
+                    for (int j = 0; j < OS_cnt && asg < req; ++j) {
+                        if (lockOS[j]) continue;
+                        const Tri& ot = allTris[oppOwnedIdx[j]];
+                        for (int sc = 0; sc < 3; ++sc) {
+                            if (ot.c[sc] == corner && nSvSp < 8 && nTmpS < 16) {
+                                svSpIdx[nSvSp] = j; svSpVal[nSvSp] = oSp[j]; nSvSp++;
+                                oSp[j] = sc;
+                                lockOS[j] = true; tmpSList[nTmpS++] = j; asg++;
+                                break;
+                            }
+                        }
+                    }
+                    if (asg < req) { okAll = false; break; }
+                }
+                (void)tmpLockO; (void)tmpLockS;
+                if (okAll && (nSv > 0 || nSvSp > 0)) {
+                    int64_t sc = evalOpp(oDest.data(), oSp.data());
+                    if (sc > bestOppSc) {
+                        bestOppSc = sc;
+                        continue;
+                    }
+                }
+                for (int k = nSv - 1; k >= 0; --k) oDest[svIdx[k]] = svVal[k];
+                for (int k = nSvSp - 1; k >= 0; --k) oSp[svSpIdx[k]] = svSpVal[k];
+                for (int k = 0; k < nTmpO; ++k) lockO[tmpOList[k]] = false;
+                for (int k = 0; k < nTmpS; ++k) lockOS[tmpSList[k]] = false;
+            }
+
+            // Single fast coordinate-ascent refinement pass for opponent
+            for (int pass = 0; pass < 1; ++pass) {
+                if (chrono::duration<double, milli>(chrono::high_resolution_clock::now() - oppT0).count() >= oppBudgetMs) break;
+                for (int i = 0; i < O_cnt; ++i) {
+                    if ((i & 15) == 0 && chrono::duration<double, milli>(chrono::high_resolution_clock::now() - oppT0).count() >= oppBudgetMs) break;
+                    int u = oppLocs[i];
+                    int orig = oDest[i], bestOpt = orig;
+                    for (int k = 0; k < numMoveOpts[u]; ++k) {
+                        int cand = moveOpts[u][k];
+                        if (cand == orig) continue;
+                        oDest[i] = cand;
+                        int64_t sc = evalOpp(oDest.data(), oSp.data());
+                        if (sc > bestOppSc) { bestOppSc = sc; bestOpt = cand; }
+                    }
+                    oDest[i] = bestOpt;
+                }
+                for (int j = 0; j < OS_cnt; ++j) {
+                    int orig = oSp[j], bestOpt = orig;
+                    for (int cand = -1; cand < 3; ++cand) {
+                        if (cand == orig) continue;
+                        oSp[j] = cand;
+                        int64_t sc = evalOpp(oDest.data(), oSp.data());
+                        if (sc > bestOppSc) { bestOppSc = sc; bestOpt = cand; }
+                    }
+                    oSp[j] = bestOpt;
+                }
+            }
+
+            memset(oppPredUnits, 0, sizeof(oppPredUnits));
+            oppPredHasUnitsMask = 0;
+            for (int i = 0; i < O_cnt; ++i) {
+                oppPredUnits[oDest[i]]++;
+                oppPredHasUnitsMask |= (1ULL << oDest[i]);
+            }
+            for (int j = 0; j < OS_cnt; ++j) {
+                if (oSp[j] >= 0) {
+                    int spN = allTris[oppOwnedIdx[j]].c[oSp[j]];
+                    oppPredUnits[spN]++;
+                    oppPredHasUnitsMask |= (1ULL << spN);
+                }
+            }
+        }
+    }
 }
 
 // Exact bitmask referee + strategic state evaluator
@@ -526,17 +831,26 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         }
     }
 
-    // Also compute robust advantage mask vs oppRobustUnits
+    // Also compute robust advantage mask vs oppRobustUnits & predicted 1-ply mask vs oppPredUnits
     uint64_t adv0_rob = 0, adv1_rob = 0;
+    uint64_t adv0_pred = 0, adv1_pred = 0;
     for (uint64_t m = (myOccMask & ~killedMyMask); m; m &= (m - 1)) {
         int u = __builtin_ctzll(m);
         if (u0[u] > oppRobustUnits[u]) adv0_rob |= (1ULL << u);
+        if (u0[u] > oppPredUnits[u]) adv0_pred |= (1ULL << u);
     }
     for (uint64_t m = (oppRobustHasUnitsMask & ~killedOppMask); m; m &= (m - 1)) {
         int u = __builtin_ctzll(m);
         int u0_eff = ((killedMyMask >> u) & 1ULL) ? 0 : u0[u];
         if (oppRobustUnits[u] > u0_eff) adv1_rob |= (1ULL << u);
     }
+    for (uint64_t m = oppPredHasUnitsMask; m; m &= (m - 1)) {
+        int u = __builtin_ctzll(m);
+        int u0_eff = ((killedMyMask >> u) & 1ULL) ? 0 : u0[u];
+        if (oppPredUnits[u] > u0_eff) adv1_pred |= (1ULL << u);
+    }
+
+    uint64_t predBlockMask = oppPredHasUnitsMask & ~adv0_pred;
 
     // Step 2: Node ownership bitmasks
     uint64_t owned0 = 0, owned1 = 0, owned0_rob = 0;
@@ -622,8 +936,9 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         if (m == t.mask) {
             totalOwnedEnd++;
             int robCnt = __builtin_popcountll(owned0_rob & t.mask);
-            score += 4750 - (3 - robCnt) * 750;
-            if (robCnt == 3) {
+            int predHits = __builtin_popcountll(predBlockMask & t.mask);
+            score += 4750 - (3 - robCnt) * 650 - (predHits == 0 ? 0 : (predHits == 1 ? 550 : 950));
+            if (robCnt == 3 && predHits == 0) {
                 safeOwnedEnd++;
             }
             if (t.owner == 1) {
@@ -715,8 +1030,13 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         score -= (int64_t)cnt * minCapDist[u] * 85LL;
         score += (int64_t)useful * nodePotential[u];
         if (extra > 0) {
-            score += ((int64_t)extra * nodePotential[u]) >> 1;
-            score -= (int64_t)extra * extra * 48LL;
+            if (oppReach[u] > 0) {
+                score += ((int64_t)extra * nodePotential[u]) >> 1;
+                score -= (int64_t)extra * extra * 48LL;
+            } else {
+                score += ((int64_t)extra * nodePotential[u]) >> 2;
+                score -= (int64_t)extra * extra * 85LL;
+            }
         }
 
         // Pure degree-2 ear & interior owned-cluster pocket guards
@@ -735,8 +1055,11 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
             }
         }
 
-        // 1-step dynamic enemy surround trap caution (only fires when disconnected without safe supply neighbor!)
-        if ((canBeSurr1StepMask >> u) & 1ULL) {
+        // 1-ply predicted surround ("Matador" bait-and-step-off) trap guard!
+        if (adjMask[u] != 0 && (adjMask[u] & ~adv1_pred) == 0) {
+            score -= (int64_t)cnt * 2800LL;
+        } else if ((canBeSurr1StepMask >> u) & 1ULL) {
+            // 1-step dynamic enemy surround trap caution (only fires when disconnected without safe supply neighbor!)
             bool hasSafeEscape = false;
             for (int v : adj[u]) {
                 if (u0[v] >= oppReach[v] || (oppReach[v] >= 4 && u0[v] >= oppUnits[v] + 3)) {
@@ -883,6 +1206,12 @@ void solveOpening3Units(chrono::high_resolution_clock::time_point startTp, doubl
 
     vector<int> cap1, cap2;
     bool timedOut = false;
+    int savedOppPred[MAX_N];
+    memcpy(savedOppPred, oppPredUnits, sizeof(oppPredUnits));
+    uint64_t savedOppPredMask = oppPredHasUnitsMask;
+    memset(oppPredUnits, 0, sizeof(oppPredUnits));
+    oppPredHasUnitsMask = 0;
+
     for (int u1 = 0; u1 < U1; ++u1) {
         double el = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - startTp).count();
         if (el >= limitMs) { timedOut = true; break; }
@@ -977,7 +1306,7 @@ void solveOpening3Units(chrono::high_resolution_clock::time_point startTp, doubl
     int64_t bestTotal = -1000000000000000LL;
     for (const auto& pm : p1Moves) {
         int64_t sub = (bestP2Only[pm.u1Idx] > -900000000000LL) ? bestSubtree[pm.u1Idx] : 0;
-        int64_t tot = pm.sc1 * 9 + sub;
+        int64_t tot = pm.sc1 * 3 + sub;
         if (tot > bestTotal) {
             bestTotal = tot;
             outDest[0] = pm.d0;
@@ -987,6 +1316,8 @@ void solveOpening3Units(chrono::high_resolution_clock::time_point startTp, doubl
         }
     }
 
+    memcpy(oppPredUnits, savedOppPred, sizeof(oppPredUnits));
+    oppPredHasUnitsMask = savedOppPredMask;
     unitLocs[0] = origLocs[0]; unitLocs[1] = origLocs[1]; unitLocs[2] = origLocs[2];
     curTurn = origTurn;
 }
@@ -1559,7 +1890,7 @@ int main() {
                     bool reinforce = (rng.nextInt(3) == 0);
                     for (int idx = 0; idx < 3; ++idx) {
                         int corner = t.c[ord[idx]];
-                        int req = (reinforce ? oppRobustUnits[corner] : oppUnits[corner]) + 1;
+                        int req = (reinforce ? max(oppRobustUnits[corner], oppPredUnits[corner]) : oppUnits[corner]) + 1;
                         if (adjMask[corner] != 0 && (adjMask[corner] & ~t.mask) == 0 && oppUnits[corner] == 0) {
                             req = 0; // Degree-2 corner inside t is auto-owned when the other 2 corners are owned!
                         }

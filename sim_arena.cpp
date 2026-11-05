@@ -766,7 +766,8 @@ int main(int argc, char** argv) {
     string botA = argv[1];
     string botB = argv[2];
     int numSeeds = (argc >= 4 ? stoi(argv[3]) : 10);
-    int onlySeed = (argc >= 5 ? stoi(argv[4]) : -1);
+    int64_t onlySeed = (argc >= 5 ? stoll(argv[4]) : -1);
+    int64_t startSeed = (argc >= 6 ? stoll(argv[5]) : 1);
 
     if (onlySeed > 0) {
         Board initB;
@@ -779,7 +780,7 @@ int main(int argc, char** argv) {
     int winsA = 0, winsB = 0, draws = 0;
     double worstMsA = 0, worstMsB = 0;
 
-    for (int s = 1; s <= numSeeds; ++s) {
+    for (int s = startSeed; s < startSeed + numSeeds; ++s) {
         Board initB;
         initB.generate(100000ULL + s * 13337ULL);
 
