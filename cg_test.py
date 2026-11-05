@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 import urllib.request
 import urllib.error
 
@@ -61,7 +62,19 @@ def main():
             headers={"Authorization": f"Bearer {token}", "User-Agent": "CodinGame-Agent/1.0"}
         )
         with urllib.request.urlopen(poll_req, timeout=45) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            raw = resp.read().decode("utf-8")
+            sraw = raw.strip()
+            if sraw.startswith("{"):
+                try:
+                    data = json.loads(sraw)
+                except Exception as e:
+                    time.sleep(1)
+            elif sraw.startswith("status:"):
+                first_line = sraw.splitlines()[0]
+                status_val = first_line.split(":", 1)[1].strip()
+                data = {"status": status_val, "log": raw}
+            else:
+                time.sleep(1)
 
     json.dump(data, open(f"{tag}.json", "w"), indent=2)
     log = data.get("log", "")

@@ -368,13 +368,14 @@ void precomputeTurnMetrics() {
 
     oppHoldMode = (totalOppUnitsGlobal >= 34 || oppTriCountGlobal >= domThreshold - 5);
 
-    // Army target & marginal spawn curve (match real enemy army + Gold surplus without melting on enemy holds)
-    int baseCap = max(44, (int)ceil(N * 0.96));
-    int matchOpp = (oppTriCountGlobal >= domThreshold - 4)
-                   ? (totalOppUnitsGlobal + 2)
-                   : (totalOppUnitsGlobal + 6);
-    int maxCap = (oppTriCountGlobal >= domThreshold - 4) ? 48 : 64;
-    armyTargetGlobal = clamp(max(baseCap, matchOpp), 42, maxCap);
+    // Army target & marginal spawn curve (scale smoothly to 70-90 units matching top players)
+    int baseCap = max(68, (int)ceil(N * 1.5));
+    int matchOpp = totalOppUnitsGlobal + 8;
+    int maxCap = 96;
+    if (oppTriCountGlobal >= domThreshold - 4) {
+        maxCap = max(56, totalOppUnitsGlobal + 4);
+    }
+    armyTargetGlobal = clamp(max(baseCap, matchOpp), 60, maxCap);
 
     int remTurns = max(1, 200 - curTurn);
     marginalSpawnGain[0] = 0;
@@ -1740,10 +1741,10 @@ int main() {
         vector<int> bestSpawn(S_cnt, -1);
         int64_t bestScore = -1000000000000000LL;
 
-        double maxTimeMs = (curTurn == 1 ? 300.0 : 23.0);
+        double maxTimeMs = (curTurn == 1 ? 350.0 : 40.0);
 
         if (curTurn <= 2 && M_cnt == 3 && S_cnt == 0) {
-            double openLimit = (curTurn == 1 ? 220.0 : 18.0);
+            double openLimit = (curTurn == 1 ? 280.0 : 32.0);
             solveOpening3Units(turnStart, openLimit, bestDest, bestScore);
         } else if (comb <= 5000.0 && M_cnt < 64 && S_cnt < 64) {
             ExactSolver ex;
