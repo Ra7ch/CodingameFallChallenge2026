@@ -1,11 +1,11 @@
 # CodinGame Fall Challenge 2026: Conversation & Development Context
 
-*Updated on 2026-11-05 at 23:55 CET*
+*Updated on 2026-11-06 at 15:55 CET*
 *User Account: `Ra7ch` (`Ra07Ch`)*
 *Contest: CodinGame Fall Challenge 2026 (`fall-challenge-2026`)*
-*Current League: Gold (Rank #82 / 862 overall, #82 / 423 in Gold, Score: 23.54)*
+*Current League: Gold (Rank #95 / ~900 overall, in-progress evaluation)*
 *Legend League Opening: `2026-11-07T09:00:00Z`*
-*Active Submission ID: `41646650` (Version `v3.7`)*
+*Active Submission ID: `41652470` (Version `v3.8`)*
 
 ---
 
@@ -13,18 +13,16 @@
 
 This repository contains the complete bot engine, local simulation arena, test harnesses, and versioned milestones for the **CodinGame Fall Challenge 2026: TryAngle Catch**.
 
-* **Current Active Bot**: Version `v3.7` ([`bot.cpp`](bot.cpp), identical to [`bot_best.cpp`](bot_best.cpp) and archived in [`bot_v3_7_sub.cpp`](bot_v3_7_sub.cpp)).
-* **Active Arena Submission**: `submission_id: 41646650` (`v3.7`).
-  * Score: **23.54** (Gold Rank **#82 / 423**, Overall Rank **#82 / 862**).
-  * 100% evaluated, 18W / 12L (60% win rate) across recent battles.
-  * Defeated prominent Gold players including `vickingur` (Rank #97, 2/2 wins), `Leonard.`, `Stounate`, `c3lew`, `arukuka`, `Scp-omii`, `MathieuSoysal`, `gllm96`, and `[CG]loick`.
+* **Current Active Bot**: Version `v3.8` ([`bot.cpp`](bot.cpp), identical to [`bot_best.cpp`](bot_best.cpp) and archived in [`bot_v3_8_sub.cpp`](bot_v3_8_sub.cpp)).
+* **Active Arena Submission**: `submission_id: 41652470` (`v3.8`).
 * **Milestone Progression**:
   * `v1.0`: Phase-heuristic machine (Rank ~325, score 22.84 in Bronze/Silver).
   * `v2.0`–`v2.9`: Unified 64-bit Bitmask Evaluator + Multi-Neighborhood Simulated Annealing + Multi-Ply Exact Solver (Silver Rank #103 / 707, score 33.88).
   * `v3.3`: Gold League transition with Priority 3/4 `ADD_PATH` and `REMOVE_PATH` (Gold Rank #104 / 402, score 20.75).
   * `v3.5`: Opening search temporal balancing (Gold Rank #85 / 415, score 22.80).
   * `v3.6`: 40ms SA budget scaling (~15k iterations/turn, peaked at Gold Rank #67 during evaluation).
-  * `v3.7`: Dynamic Army Scaling to 96 units, breaking the 44-unit plateau bottleneck (Gold Rank #82, score 23.54, beating `v3.5` 57.3% locally).
+  * `v3.7`: Dynamic Army Scaling to 96 units, breaking the 44-unit plateau bottleneck (Gold Rank #82, score 23.54).
+  * `v3.8`: Reciprocal edge flow cancellation (`min(moveCount[u][v], moveCount[v][u])`), eliminating ping-pong oscillation traps that caused catastrophic 13-unit encirclement losses in mid-game (58.3% win rate vs `bot_best` across 48 dual-seat benchmark games).
 * **Next Goal**: Push into **Top 30 in Gold League** (Score $\ge 28.29$, targeting `#30 Rikus` at 28.29, `#23 laconic_pixel` at 29.26, `#2 DomiKo` at 36.78, `#1 H1ggsb0s0n` at 37.26).
 
 ---

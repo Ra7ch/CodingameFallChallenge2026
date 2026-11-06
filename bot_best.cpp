@@ -2105,6 +2105,17 @@ int main() {
             int fr = unitLocs[i], to = bestDest[i];
             if (fr != to) moveCount[fr][to]++;
         }
+        for (int u = 0; u < N; ++u) {
+            for (int v : initAdj[u]) {
+                if (u < v) {
+                    int cancel = min(moveCount[u][v], moveCount[v][u]);
+                    if (cancel > 0) {
+                        moveCount[u][v] -= cancel;
+                        moveCount[v][u] -= cancel;
+                    }
+                }
+            }
+        }
         for (int fr = 0; fr < N; ++fr) {
             for (int v : initAdj[fr]) {
                 if (moveCount[fr][v] > 0) {
