@@ -794,7 +794,7 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
     uint64_t killedMyMask = 0;
     uint64_t killedOppMask = 0;
 
-    for (uint64_t m = (myOccMask & possibleSelfSurrMask); m; m &= (m - 1)) {
+    for (uint64_t m = myOccMask; m; m &= (m - 1)) {
         int u = __builtin_ctzll(m);
         if ((adjMask[u] & ~adv1) == 0) {
             killedMyUnits += u0[u];
