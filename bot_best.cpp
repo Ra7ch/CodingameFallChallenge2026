@@ -1745,7 +1745,7 @@ int main() {
         if (curTurn <= 2 && M_cnt == 3 && S_cnt == 0) {
             double openLimit = (curTurn == 1 ? 280.0 : 32.0);
             solveOpening3Units(turnStart, openLimit, bestDest, bestScore);
-        } else if (comb <= 5000.0 && M_cnt < 64 && S_cnt < 64) {
+        } else if (comb <= 12000.0 && M_cnt < 64 && S_cnt < 64) {
             ExactSolver ex;
             ex.startTp = turnStart;
             ex.limitMs = maxTimeMs;

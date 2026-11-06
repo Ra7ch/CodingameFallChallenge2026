@@ -6,6 +6,8 @@ import sys
 
 botA = sys.argv[1]
 botB = sys.argv[2]
+if not botA.startswith("./") and not botA.startswith("/"): botA = "./" + botA
+if not botB.startswith("./") and not botB.startswith("/"): botB = "./" + botB
 total_seeds = int(sys.argv[3]) if len(sys.argv) > 3 else 24
 workers = int(sys.argv[4]) if len(sys.argv) > 4 else 8
 base_seed = int(sys.argv[5]) if len(sys.argv) > 5 else 1
