@@ -912,7 +912,7 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
                 if (!oppThreat) {
                     safeOwnedEnd++;
                 } else {
-                    score -= 950; // Vulnerable frontline hold: prefer cashing out via SPAWN or defending!
+                    // Contested frontline hold: do not penalize holding our factory!
                 }
             }
         } else {
