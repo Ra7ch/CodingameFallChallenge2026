@@ -1540,8 +1540,7 @@ int main() {
         int initDomNow = 0;
         while ((double)initDomNow < (double)T_cnt * 0.8) initDomNow++;
         int maxAddPaths = (curMyTris >= initDomNow - 3) ? 0 :
-                          ((curMyTotal >= 50 && curMyTotal >= curOppTotal + 4 && curMyTris >= 5) ? 2 :
-                          ((curMyTotal >= 35 && curMyTotal >= curOppTotal - 4 && curMyTris >= 3) ? 1 : 0));
+                          ((curMyTotal >= 55 && curMyTotal >= curOppTotal + 12 && curMyTris >= 6) ? 1 : 0);
 
         for (int addStep = 0; addStep < maxAddPaths && !linkablePairs.empty(); ++addStep) {
             uint64_t oppNowMask = 0;
@@ -1741,7 +1740,7 @@ int main() {
         vector<int> bestSpawn(S_cnt, -1);
         int64_t bestScore = -1000000000000000LL;
 
-        double maxTimeMs = (curTurn == 1 ? 750.0 : 65.0);
+        double maxTimeMs = (curTurn == 1 ? 800.0 : 38.0);
 
         if (curTurn <= 2 && M_cnt == 3 && S_cnt == 0) {
             double openLimit = (curTurn == 1 ? 280.0 : 32.0);
@@ -1821,7 +1820,7 @@ int main() {
             const double T_start = 2600.0;
             const double T_end = 10.0;
             double temp = T_start;
-            double saBudgetMs = maxTimeMs - 5.0; // Reserve final 3 ms for deterministic polish
+            double saBudgetMs = (curTurn == 1 ? 750.0 : 34.0);
             int iter = 0;
 
             int savedIdx[64], savedVal[64], nSaved = 0;
@@ -1845,8 +1844,8 @@ int main() {
                 nSavedSp = 0;
                 int roll = rng.nextInt(100);
 
-                if (roll < 30 && M_cnt > 0) {
-                    // Op 1: Single unit move (30%)
+                if (roll < 42 && M_cnt > 0) {
+                    // Op 1: Single unit move
                     int i = rng.nextInt(M_cnt);
                     int u = unitLocs[i];
                     int cnt = numMoveOpts[u];
@@ -1856,14 +1855,14 @@ int main() {
                     if (cand == curDest[i]) continue;
                     savedIdx[nSaved] = i; savedVal[nSaved] = curDest[i]; nSaved++;
                     curDest[i] = cand;
-                } else if (roll < 48 && S_cnt > 0) {
-                    // Op 2: Single spawn change (18%)
+                } else if (roll < 61 && S_cnt > 0) {
+                    // Op 2: Single spawn change
                     int j = rng.nextInt(S_cnt);
                     int cand = rng.nextInt(4) - 1;
                     if (cand == curSpawn[j]) continue;
                     savedSpIdx[nSavedSp] = j; savedSpVal[nSavedSp] = curSpawn[j]; nSavedSp++;
                     curSpawn[j] = cand;
-                } else if (roll < 84 && C_cnt > 0 && (M_cnt + S_cnt) > 0) {
+                } else if (roll < 81 && C_cnt > 0 && (M_cnt + S_cnt) > 0) {
                     // Op 3: Exact 3-Corner Relay / Slot Matcher Macro-Move!
                     const Tri& t = allTris[capTriIdx[rng.nextInt(C_cnt)]];
                     bool lockU[512];
@@ -2058,42 +2057,39 @@ int main() {
                 }
             }
 
-            // Final deterministic greedy polish (up to 2 passes if time permits)
+            // Final deterministic greedy polish with strict exit guard
             curDest = bestDest;
             curSpawn = bestSpawn;
             curScore = bestScore;
-            for (int pass = 0; pass < 2; ++pass) {
-                bool improved = false;
-                for (int i = 0; i < M_cnt; ++i) {
-                    double elapsed = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - turnStart).count();
-                    if (elapsed >= maxTimeMs) break;
-                    int u = unitLocs[i];
-                    int orig = curDest[i];
-                    int bestOpt = orig;
-                    for (int k = 0; k < numMoveOpts[u]; ++k) {
-                        int cand = moveOpts[u][k];
-                        if (cand == orig) continue;
-                        curDest[i] = cand;
-                        int64_t sc = evalState(curDest.data(), curSpawn.data());
-                        if (sc > curScore) { curScore = sc; bestOpt = cand; improved = true; }
-                    }
-                    curDest[i] = bestOpt;
+            for (int i = 0; i < M_cnt; ++i) {
+                double elapsed = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - turnStart).count();
+                if (elapsed >= maxTimeMs) goto polish_done;
+                int u = unitLocs[i];
+                int orig = curDest[i];
+                int bestOpt = orig;
+                for (int k = 0; k < numMoveOpts[u]; ++k) {
+                    int cand = moveOpts[u][k];
+                    if (cand == orig) continue;
+                    curDest[i] = cand;
+                    int64_t sc = evalState(curDest.data(), curSpawn.data());
+                    if (sc > curScore) { curScore = sc; bestOpt = cand; }
                 }
-                for (int j = 0; j < S_cnt; ++j) {
-                    double elapsed = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - turnStart).count();
-                    if (elapsed >= maxTimeMs) break;
-                    int orig = curSpawn[j];
-                    int bestOpt = orig;
-                    for (int cand = -1; cand < 3; ++cand) {
-                        if (cand == orig) continue;
-                        curSpawn[j] = cand;
-                        int64_t sc = evalState(curDest.data(), curSpawn.data());
-                        if (sc > curScore) { curScore = sc; bestOpt = cand; improved = true; }
-                    }
-                    curSpawn[j] = bestOpt;
-                }
-                if (!improved) break;
+                curDest[i] = bestOpt;
             }
+            for (int j = 0; j < S_cnt; ++j) {
+                double elapsed = chrono::duration<double, milli>(chrono::high_resolution_clock::now() - turnStart).count();
+                if (elapsed >= maxTimeMs) goto polish_done;
+                int orig = curSpawn[j];
+                int bestOpt = orig;
+                for (int cand = -1; cand < 3; ++cand) {
+                    if (cand == orig) continue;
+                    curSpawn[j] = cand;
+                    int64_t sc = evalState(curDest.data(), curSpawn.data());
+                    if (sc > curScore) { curScore = sc; bestOpt = cand; }
+                }
+                curSpawn[j] = bestOpt;
+            }
+        polish_done:
             bestDest = curDest;
             bestSpawn = curSpawn;
             bestScore = curScore;
