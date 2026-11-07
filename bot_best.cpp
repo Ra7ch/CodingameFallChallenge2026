@@ -1465,7 +1465,7 @@ int64_t evalPortfolio(const int* __restrict__ dest, const int* __restrict__ spaw
         int containedBonus = 0;
         uint64_t k0Mask = 0, k1Mask = 0;
 
-        for (uint64_t m = (myOccMask & br.canSurrMeMask); m; m &= (m - 1)) {
+        for (uint64_t m = myOccMask; m; m &= (m - 1)) {
             int u = __builtin_ctzll(m);
             if ((adjMask[u] & ~a1) == 0) {
                 k0 += u0[u];

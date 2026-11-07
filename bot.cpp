@@ -90,6 +90,8 @@ bool oppCanThreatenOwned[MAX_T];
 int C_cnt;
 int capTriIdx[MAX_T];
 uint64_t triNbrUnion[MAX_T];
+bool wasOwnedByMe[MAX_T];
+int freshCapCntGlobal;
 int R_cnt;
 int resetTriIdx[MAX_T];
 int M_cnt;
@@ -409,6 +411,11 @@ if(adjMask[u]!=0&&((ownedUnionMask>>u)&1ULL)&&(adjMask[u]&~ownedUnionMask)==0){
 interiorOwnedMask|=(1ULL<<u);
 }
 }
+freshCapCntGlobal=0;
+for(int ci=0;ci<C_cnt;++ci){
+int tid=capTriIdx[ci];
+if(!wasOwnedByMe[tid]||allTris[tid].owner==1)freshCapCntGlobal++;
+}
 M_cnt=0;
 for(int u=0;u<N;++u){
 for(int k=0;k<myUnits[u];++k){
@@ -459,9 +466,12 @@ if(d==INF_DIST)d=min({distMat[u][t.h1],distMat[u][t.h2],distMat[u][t.h3]});
 if(d<bestDCap)bestDCap=d;
 if(d>=12)continue;
 double attr=205.0;
-if(t.owner==1)attr=(oppHoldMode?270.0:205.0);
-if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
-attr+=60.0;
+if(t.owner==1){
+attr=(oppHoldMode?280.0:225.0);
+}else if(!wasOwnedByMe[capTriIdx[ci]]){
+attr+=85.0;
+}else if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
+if(freshCapCntGlobal>0)attr*=0.55;
 }
 int nearCorners=0;
 for(int c:t.c){
@@ -1311,7 +1321,7 @@ if(br.u1[u]>u0[u])a1|=(1ULL<<u);
 int k0=0,k1=0;
 int containedBonus=0;
 uint64_t k0Mask=0,k1Mask=0;
-for(uint64_t m=(myOccMask&br.canSurrMeMask);m;m&=(m-1)){
+for(uint64_t m=myOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 if((adjMask[u]&~a1)==0){
 k0+=u0[u];
@@ -1426,9 +1436,16 @@ sc-=4100;
 for(int ci=0;ci<C_cnt;++ci){
 uint64_t m=cTriMask[ci];
 int osIdx=cTriOwner1OsIdx[ci];
+int tid=capTriIdx[ci];
 if((ow0&m)==m){
 myTrisEnd++;
-sc+=4750;
+int64_t capBonus=4750;
+if(!wasOwnedByMe[tid]||osIdx>=0){
+capBonus+=450;
+}else if(oppReach[allTris[tid].h1]==0&&oppReach[allTris[tid].h2]==0&&oppReach[allTris[tid].h3]==0){
+if(freshCapCntGlobal>0)capBonus-=400;
+}
+sc+=capBonus;
 if(br.isStatic){
 int robCnt=__builtin_popcountll(owned0_rob&m);
 sc-=(3-robCnt)*400;
@@ -2434,6 +2451,7 @@ cin>>hid>>hx>>hy;
 pos[hid]={hx,hy};
 }
 FastRNG rng;
+memset(wasOwnedByMe,0,sizeof(wasOwnedByMe));
 while(cin>>myScoreGlobal>>oppScoreGlobal){
 auto turnStart=chrono::high_resolution_clock::now();
 curTurn++;
@@ -2484,6 +2502,7 @@ allTris[i].meCan=(mc!=0);
 allTris[i].oppCan=(oc!=0);
 if(ow==1)initOppTris++;
 else if(ow==0)curMyTris++;
+if(ow==0)wasOwnedByMe[i]=true;
 }
 int linkableCount;
 cin>>linkableCount;
@@ -2525,12 +2544,10 @@ if(unwalkableSurr)savedBoxed+=min(4,myUnits[v]);
 }
 int effKill=oppU+savedBoxed;
 bool worthIt=false;
-if(oppU>=6&&curMyTotal>=8)worthIt=true;
-else if(oppU==5&&curMyTotal>=15&&(curMyTris>=2||curMyTotal>=curOppTotal-2))worthIt=true;
-else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
-else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
-else if(oppU==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
-else if(oppU==2&&curMyTotal>=52&&curMyTotal>=curOppTotal+18&&oppTrisOnU>=2&&curMyTris>=5)worthIt=true;
+if(oppU>=8&&curMyTotal>=20)worthIt=true;
+else if(oppU>=4&&savedBoxed>=4&&effKill>=8&&curMyTotal>=20&&curMyTris>=2)worthIt=true;
+else if(oppU>=5&&curMyTotal>=40&&curMyTris>=3)worthIt=true;
+else if(oppU>=4&&curMyTotal>=48&&curMyTris>=4)worthIt=true;
 if(worthIt){
 int val=effKill*120+oppU*40+oppTrisOnU*35;
 if(myUnits[t.h1]==1&&myUnits[t.h2]==1&&myUnits[t.h3]==1&&!t.hasNode(u)){
