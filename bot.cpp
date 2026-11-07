@@ -1,4 +1,4 @@
-// Ra07Ch v4.0 — Double-Oracle Simultaneous Zero-Sum Referee Portfolio Search
+// Ra07Ch v5.4 — Simultaneous Double-Oracle + Deduplicated 2-Ply Rollout + Highway Flow
 #pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include <vector>
@@ -78,6 +78,7 @@ uint64_t canBeSurr1StepMask;
 uint64_t pureEarMask;
 uint64_t degLe2Mask;
 uint64_t interiorOwnedMask;
+uint64_t rTriUnionMask;
 int nodePotential[MAX_N];
 int minCapDist[MAX_N];
 int oppSupplyNear[MAX_N];
@@ -293,7 +294,7 @@ allTris[T_cnt++]=nt;
 }
 }
 }
-void precomputeTurnMetrics(){
+void precomputeTurnMetrics(bool buildPortfolio=true){
 oppHasUnitsMask=0;
 oppRobustHasUnitsMask=0;
 totalOppUnitsGlobal=0;
@@ -387,6 +388,7 @@ else potentialEnemyAtkZone[u]=true;
 }
 S_cnt=C_cnt=R_cnt=0;
 uint64_t ownedUnionMask=0;
+rTriUnionMask=0;
 for(int i=0;i<T_cnt;++i){
 const Tri&t=allTris[i];
 if(t.owner==0){
@@ -398,6 +400,7 @@ oppCanThreatenOwned[idx]=(t.oppCan&&oppReach[t.h1]>=1&&oppReach[t.h2]>=1&&oppRea
 capTriIdx[C_cnt++]=i;
 }else if(t.owner==-1&&!t.meCan){
 resetTriIdx[R_cnt++]=i;
+rTriUnionMask|=t.mask;
 }
 }
 interiorOwnedMask=0;
@@ -485,6 +488,7 @@ else if(d>1&&d<10)pot+=150.0*decay[d];
 minCapDist[u]=bestDCap;
 nodePotential[u]=(int)llround(pot);
 }
+if(!buildPortfolio)return;
 {
 O_cnt_global=0;
 uint64_t myHasMask=0;
@@ -1269,7 +1273,8 @@ sharedScore-=1800;
 sharedScore-=1100;
 }
 int occ=(u0[t.h1]>0)+(u0[t.h2]>0)+(u0[t.h3]>0);
-sharedScore-=(occ-1)*200;
+sharedScore-=(occ-1)*320;
+if((rTriUnionMask>>spNode)&1ULL)sharedScore-=240;
 }
 }
 for(int ri=0;ri<R_cnt;++ri){
@@ -1475,6 +1480,17 @@ sc+=90000000LL;
 }
 respScores[r]=sc;
 }
+if(k0MaskStatic!=0){
+for(int j=0;j<S_cnt;++j){
+int sc=spawnChoice[j];
+if(sc>=0){
+int spNode=allTris[ownedTriIdx[j]].c[sc];
+if((k0MaskStatic>>spNode)&1ULL){
+sharedScore-=9000LL;
+}
+}
+}
+}
 uint64_t activeArmedMask=0,activePotMask=0;
 for(int ei=0;ei<E_cnt;++ei){
 const EnemyAtkTri&et=eatkTris[ei];
@@ -1501,7 +1517,7 @@ uint64_t aliveOccMask=myOccMask&~k0MaskStatic;
 for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
-int need=oppUnits[u]+1;
+int need=(minCapDist[u]==0?max(oppUnits[u],oppRobustUnits[u]):oppUnits[u])+1;
 int useful=min(cnt,need);
 int extra=cnt-useful;
 sharedScore-=(int64_t)cnt*minCapDist[u]*85LL;
@@ -1510,6 +1526,12 @@ if(extra>0){
 if(oppReach[u]>0){
 sharedScore+=((int64_t)extra*nodePotential[u])>>1;
 sharedScore-=(int64_t)extra*extra*48LL;
+}else if(minCapDist[u]>=1&&!((rTriUnionMask>>u)&1ULL)){
+int transitUseful=min(extra,2);
+int remExtra=extra-transitUseful;
+sharedScore+=((int64_t)transitUseful*nodePotential[u]*3)>>2;
+sharedScore+=((int64_t)remExtra*nodePotential[u])>>2;
+sharedScore-=(int64_t)extra*extra*38LL;
 }else{
 sharedScore+=((int64_t)extra*nodePotential[u])>>2;
 sharedScore-=(int64_t)extra*extra*85LL;
@@ -2042,6 +2064,321 @@ oppPredHasUnitsMask=savedOppPredMask;
 unitLocs[0]=origLocs[0];unitLocs[1]=origLocs[1];unitLocs[2]=origLocs[2];
 curTurn=origTurn;
 }
+struct Ply2Cand{
+int64_t sc;
+uint64_t sig;
+int dest[64];
+int spawn[32];
+};
+inline uint64_t hashActionBoard(const int*dest,const int*spawn){
+uint8_t cntU[MAX_N];
+memset(cntU,0,N);
+for(int i=0;i<M_cnt;++i)cntU[dest[i]]++;
+uint64_t h=14695981039346656037ULL;
+for(int u=0;u<N;++u){
+if(cntU[u]){
+h ^=(uint64_t)((u<<8)|cntU[u]);
+h*=1099511628211ULL;
+}
+}
+for(int j=0;j<S_cnt;++j){
+h ^=(uint64_t)((j<<4)|(spawn[j]+2));
+h*=1099511628211ULL;
+}
+return h;
+}
+inline void insertPly2Cand(Ply2Cand*pool,int&nPool,int maxPool,int64_t sc,int64_t minAllowed,
+const int*dest,const int*spawn){
+if(M_cnt>64||S_cnt>32||sc<minAllowed)return;
+uint64_t sig=hashActionBoard(dest,spawn);
+for(int k=0;k<nPool;++k){
+if(pool[k].sig==sig){
+if(sc>pool[k].sc){
+pool[k].sc=sc;
+memcpy(pool[k].dest,dest,M_cnt*sizeof(int));
+memcpy(pool[k].spawn,spawn,S_cnt*sizeof(int));
+}
+return;
+}
+}
+if(nPool<maxPool){
+pool[nPool].sc=sc;
+pool[nPool].sig=sig;
+memcpy(pool[nPool].dest,dest,M_cnt*sizeof(int));
+memcpy(pool[nPool].spawn,spawn,S_cnt*sizeof(int));
+nPool++;
+}else{
+int worst=0;
+for(int k=1;k<nPool;++k)if(pool[k].sc<pool[worst].sc)worst=k;
+if(sc>pool[worst].sc){
+pool[worst].sc=sc;
+pool[worst].sig=sig;
+memcpy(pool[worst].dest,dest,M_cnt*sizeof(int));
+memcpy(pool[worst].spawn,spawn,S_cnt*sizeof(int));
+}
+}
+}
+void selectBestWithPly2(chrono::high_resolution_clock::time_point turnStart,double limitMs,
+Ply2Cand*rawPool,int nRaw,
+vector<int>&bestDest,vector<int>&bestSpawn,int64_t&bestScore){
+if(M_cnt>44||S_cnt>24)return;
+double el0=chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count();
+if(el0+1.2>=limitMs)return;
+const int64_t window=2600LL;
+Ply2Cand cands[8];
+int nCands=0;
+insertPly2Cand(cands,nCands,8,bestScore,bestScore-window,bestDest.data(),bestSpawn.data());
+for(int i=0;i<nRaw;++i){
+if(rawPool[i].sc>=bestScore-window){
+insertPly2Cand(cands,nCands,8,rawPool[i].sc,bestScore-window,rawPool[i].dest,rawPool[i].spawn);
+}
+}
+if(nCands<8&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()+1.6<limitMs){
+int tmpD[64],tmpS[32];
+memcpy(tmpD,bestDest.data(),M_cnt*sizeof(int));
+memcpy(tmpS,bestSpawn.data(),S_cnt*sizeof(int));
+for(int j=0;j<S_cnt;++j){
+int orig=tmpS[j];
+for(int scOpt=-1;scOpt<3;++scOpt){
+if(scOpt==orig)continue;
+tmpS[j]=scOpt;
+int64_t sc=evalPortfolio(tmpD,tmpS);
+if(sc>=bestScore-window){
+insertPly2Cand(cands,nCands,8,sc,bestScore-window,tmpD,tmpS);
+}
+}
+tmpS[j]=orig;
+}
+int stepProbes=0;
+for(int i=0;i<M_cnt&&stepProbes<36;++i){
+if(i>0&&unitLocs[i]==unitLocs[i-1]&&tmpD[i]==tmpD[i-1])continue;
+int u=unitLocs[i],orig=tmpD[i];
+for(int k=0;k<numMoveOpts[u]&&stepProbes<36;++k){
+int cand=moveOpts[u][k];
+if(cand==orig)continue;
+stepProbes++;
+tmpD[i]=cand;
+int64_t sc=evalPortfolio(tmpD,tmpS);
+if(sc>=bestScore-window){
+insertPly2Cand(cands,nCands,8,sc,bestScore-window,tmpD,tmpS);
+}
+}
+tmpD[i]=orig;
+}
+}
+if(nCands<=1)return;
+for(int a=1;a<nCands;++a){
+for(int b=a+1;b<nCands;++b){
+if(cands[b].sc>cands[a].sc)swap(cands[a],cands[b]);
+}
+}
+int origM=M_cnt,origS=S_cnt,origTurnNow=curTurn;
+int origUnitLocs[64],origOwnedIdx[32];
+memcpy(origUnitLocs,unitLocs,origM*sizeof(int));
+memcpy(origOwnedIdx,ownedTriIdx,origS*sizeof(int));
+int origMyU[MAX_N],origOppU[MAX_N],origOppPred[MAX_N];
+memcpy(origMyU,myUnits,sizeof(myUnits));
+memcpy(origOppU,oppUnits,sizeof(oppUnits));
+memcpy(origOppPred,oppPredUnits,sizeof(oppPredUnits));
+uint64_t origOppPredMask=oppPredHasUnitsMask;
+Tri origTris[MAX_T];
+for(int t=0;t<T_cnt;++t)origTris[t]=allTris[t];
+const int*oppNextU=(numOppResp>=2)?oppPortfolio[1].u1:origOppU;
+int bestIdx=0;
+int64_t bestCombined=-1000000000000000LL;
+int evaluatedCnt=0;
+for(int ci=0;ci<nCands;++ci){
+double el=chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count();
+if(el+0.35>=limitMs)break;
+memset(myUnits,0,N*sizeof(int));
+memcpy(oppUnits,oppNextU,N*sizeof(int));
+for(int t=0;t<T_cnt;++t)allTris[t]=origTris[t];
+for(int i=0;i<origM;++i)myUnits[cands[ci].dest[i]]++;
+for(int j=0;j<origS;++j){
+int sc=cands[ci].spawn[j];
+if(sc>=0){
+Tri&tr=allTris[origOwnedIdx[j]];
+myUnits[tr.c[sc]]++;
+tr.owner=-1;
+tr.meCan=false;
+}
+}
+if(numOppResp>=2){
+for(int j=0;j<OS_cnt_global;++j){
+if(!oppPortfolio[1].held1[j]){
+Tri&otr=allTris[oppOwnedIdxGlobal[j]];
+otr.owner=-1;
+otr.oppCan=false;
+}
+}
+}
+auto nodeOw=[&](int u)->int{
+if(!adj[u].empty()){
+bool all0=true,all1=true;
+for(int nb:adj[u]){
+if(myUnits[nb]<=oppUnits[nb])all0=false;
+if(oppUnits[nb]<=myUnits[nb])all1=false;
+}
+if(all0)return 0;
+if(all1)return 1;
+}
+if(myUnits[u]>oppUnits[u])return 0;
+if(oppUnits[u]>myUnits[u])return 1;
+return-1;
+};
+int kill0[MAX_N],nk0=0,kill1[MAX_N],nk1=0;
+for(int u=0;u<N;++u){
+int ow=nodeOw(u);
+if(ow==0&&oppUnits[u]>0)kill1[nk1++]=u;
+else if(ow==1&&myUnits[u]>0)kill0[nk0++]=u;
+}
+for(int z=0;z<nk0;++z)myUnits[kill0[z]]=0;
+for(int z=0;z<nk1;++z)oppUnits[kill1[z]]=0;
+while(true){
+bool chg=false;
+for(int t=0;t<T_cnt;++t){
+Tri&tr=allTris[t];
+if(!tr.meCan&&myUnits[tr.h1]==0&&myUnits[tr.h2]==0&&myUnits[tr.h3]==0)tr.meCan=true;
+if(!tr.oppCan&&oppUnits[tr.h1]==0&&oppUnits[tr.h2]==0&&oppUnits[tr.h3]==0)tr.oppCan=true;
+}
+int ows[MAX_N];
+for(int u=0;u<N;++u)ows[u]=nodeOw(u);
+for(int t=0;t<T_cnt;++t){
+Tri&tr=allTris[t];
+int o0=ows[tr.h1];
+if(o0!=-1&&o0==ows[tr.h2]&&o0==ows[tr.h3]){
+if(o0==0&&tr.owner!=0&&tr.meCan){
+tr.owner=0;tr.meCan=false;chg=true;
+}else if(o0==1&&tr.owner!=1&&tr.oppCan){
+tr.owner=1;tr.oppCan=false;chg=true;
+}
+}
+}
+if(!chg)break;
+}
+curTurn=origTurnNow+1;
+precomputeTurnMetrics(false);
+memcpy(oppPredUnits,oppRobustUnits,N*sizeof(int));
+oppPredHasUnitsMask=oppRobustHasUnitsMask;
+if(M_cnt>128||S_cnt>64)break;
+int d2[128],sp2[64];
+for(int i=0;i<M_cnt;++i)d2[i]=unitLocs[i];
+for(int j=0;j<S_cnt;++j){
+if(M_cnt+j<armyTargetGlobal){
+const Tri&tr=allTris[ownedTriIdx[j]];
+int bc=0,bp=-999999;
+for(int k=0;k<3;++k){
+int c=tr.c[k];
+int pocketPen=(adjMask[c]!=0&&(adjMask[c]&~tr.mask)==0)?2000:
+((((interiorOwnedMask>>c)&1ULL)&&(tr.mask&~interiorOwnedMask)!=0)?1100:0);
+int p=nodePotential[c]-(armedEnemyAtkZone[c]?800:0)-pocketPen;
+if(p>bp){bp=p;bc=k;}
+}
+sp2[j]=bc;
+}else{
+sp2[j]=-1;
+}
+}
+int64_t ply2Sc=evalState(d2,sp2);
+int sortedC[MAX_T];
+for(int k=0;k<C_cnt;++k)sortedC[k]=capTriIdx[k];
+sort(sortedC,sortedC+C_cnt,[&](int a,int b){
+const Tri&ta=allTris[a];const Tri&tb=allTris[b];
+return(nodePotential[ta.h1]+nodePotential[ta.h2]+nodePotential[ta.h3])>
+(nodePotential[tb.h1]+nodePotential[tb.h2]+nodePotential[tb.h3]);
+});
+bool lkU[128]={false},lkS[64]={false};
+for(int k=0;k<C_cnt;++k){
+const Tri&tr=allTris[sortedC[k]];
+int svI[12],svV[12],nS=0,svSI[8],svSV[8],nSS=0;
+int tU[12],ntU=0,tS[8],ntS=0;
+bool ok=true;
+for(int z=0;z<3;++z){
+int corner=tr.c[z];
+int req=oppRobustUnits[corner]+1;
+if(adjMask[corner]!=0&&(adjMask[corner]&~tr.mask)==0&&oppUnits[corner]==0)req=0;
+int asg=0;
+for(int i=0;i<M_cnt&&asg<req;++i){
+if(!lkU[i]&&d2[i]==corner&&ntU<12){lkU[i]=true;tU[ntU++]=i;asg++;}
+}
+for(int j=0;j<S_cnt&&asg<req;++j){
+if(!lkS[j]&&sp2[j]>=0&&allTris[ownedTriIdx[j]].c[sp2[j]]==corner&&ntS<8){
+lkS[j]=true;tS[ntS++]=j;asg++;
+}
+}
+for(int i=0;i<M_cnt&&asg<req;++i){
+if(lkU[i])continue;
+int u=unitLocs[i];
+if((u==corner||((initAdjMask[u]>>corner)&1ULL))&&nS<12&&ntU<12){
+svI[nS]=i;svV[nS]=d2[i];nS++;
+d2[i]=corner;lkU[i]=true;tU[ntU++]=i;asg++;
+}
+}
+for(int j=0;j<S_cnt&&asg<req;++j){
+if(lkS[j])continue;
+const Tri&ot=allTris[ownedTriIdx[j]];
+for(int sc=0;sc<3;++sc){
+if(ot.c[sc]==corner&&nSS<8&&ntS<8){
+svSI[nSS]=j;svSV[nSS]=sp2[j];nSS++;
+sp2[j]=sc;lkS[j]=true;tS[ntS++]=j;asg++;break;
+}
+}
+}
+if(asg<req){ok=false;break;}
+}
+if(ok&&(nS>0||nSS>0)){
+int64_t candSc=evalState(d2,sp2);
+if(candSc>ply2Sc){ply2Sc=candSc;continue;}
+}
+for(int z=nS-1;z>=0;--z)d2[svI[z]]=svV[z];
+for(int z=nSS-1;z>=0;--z)sp2[svSI[z]]=svSV[z];
+for(int z=0;z<ntU;++z)lkU[tU[z]]=false;
+for(int z=0;z<ntS;++z)lkS[tS[z]]=false;
+}
+for(int i=0;i<M_cnt;++i){
+if((i&7)==0&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=limitMs)break;
+int u=unitLocs[i],orig=d2[i],bOpt=orig;
+for(int k=0;k<numMoveOpts[u];++k){
+int cand=moveOpts[u][k];
+if(cand==orig)continue;
+d2[i]=cand;
+int64_t sc=evalState(d2,sp2);
+if(sc>ply2Sc){ply2Sc=sc;bOpt=cand;}
+}
+d2[i]=bOpt;
+}
+for(int j=0;j<S_cnt;++j){
+if((j&3)==0&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=limitMs)break;
+int orig=sp2[j],bOpt=orig;
+for(int cand=-1;cand<3;++cand){
+if(cand==orig)continue;
+sp2[j]=cand;
+int64_t sc=evalState(d2,sp2);
+if(sc>ply2Sc){ply2Sc=sc;bOpt=cand;}
+}
+sp2[j]=bOpt;
+}
+int64_t combined=cands[ci].sc*4LL+ply2Sc;
+if(combined>bestCombined){
+bestCombined=combined;
+bestIdx=ci;
+}
+evaluatedCnt++;
+}
+M_cnt=origM;S_cnt=origS;curTurn=origTurnNow;
+memcpy(unitLocs,origUnitLocs,origM*sizeof(int));
+memcpy(ownedTriIdx,origOwnedIdx,origS*sizeof(int));
+memcpy(myUnits,origMyU,sizeof(myUnits));
+memcpy(oppUnits,origOppU,sizeof(oppUnits));
+memcpy(oppPredUnits,origOppPred,sizeof(oppPredUnits));
+oppPredHasUnitsMask=origOppPredMask;
+for(int t=0;t<T_cnt;++t)allTris[t]=origTris[t];
+if(evaluatedCnt>=2&&bestIdx!=0){
+bestScore=cands[bestIdx].sc;
+for(int i=0;i<M_cnt;++i)bestDest[i]=cands[bestIdx].dest[i];
+for(int j=0;j<S_cnt;++j)bestSpawn[j]=cands[bestIdx].spawn[j];
+}
+}
 struct ExactSolver{
 int curDest[64];
 int curSpawn[64];
@@ -2052,6 +2389,8 @@ chrono::high_resolution_clock::time_point startTp;
 double limitMs=23.0;
 int leaves=0;
 bool timedOut=false;
+Ply2Cand topPool[8];
+int nTop=0;
 void dfsSpawn(int sj){
 if(timedOut)return;
 if(sj==S_cnt){
@@ -2064,6 +2403,9 @@ if(sc>bestScore){
 bestScore=sc;
 memcpy(bestDest,curDest,M_cnt*sizeof(int));
 memcpy(bestSpawn,curSpawn,S_cnt*sizeof(int));
+}
+if(sc>=bestScore-2600LL){
+insertPly2Cand(topPool,nTop,8,sc,bestScore-2600LL,curDest,curSpawn);
 }
 return;
 }
@@ -2177,22 +2519,23 @@ if(allTris[k].owner==1&&allTris[k].hasNode(u))oppTrisOnU++;
 int savedBoxed=0;
 for(int v:adj[u]){
 if(myUnits[v]>=2&&!adj[v].empty()){
-bool allBoxed=true;
+bool unwalkableSurr=true;
 for(int nb:adj[v]){
-if(oppUnits[nb]<myUnits[nb]||oppUnits[nb]==0){
-allBoxed=false;
+if(oppUnits[nb]<=myUnits[nb]+myUnits[v]){
+unwalkableSurr=false;
 break;
 }
 }
-if(allBoxed)savedBoxed+=min(4,myUnits[v]);
+if(unwalkableSurr)savedBoxed+=min(4,myUnits[v]);
 }
 }
 int effKill=oppU+savedBoxed;
 bool worthIt=false;
-if(effKill>=6&&curMyTotal>=8)worthIt=true;
-else if(effKill==5&&curMyTotal>=16&&(curMyTris>=2||curMyTotal>=curOppTotal))worthIt=true;
-else if(effKill==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
-else if(effKill==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
+if(oppU>=6&&curMyTotal>=8)worthIt=true;
+else if(oppU==5&&curMyTotal>=15&&(curMyTris>=2||curMyTotal>=curOppTotal-2))worthIt=true;
+else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
+else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
+else if(oppU==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
 else if(oppU==2&&curMyTotal>=52&&curMyTotal>=curOppTotal+18&&oppTrisOnU>=2&&curMyTris>=5)worthIt=true;
 if(worthIt){
 int val=effKill*120+oppU*40+oppTrisOnU*35;
@@ -2409,11 +2752,14 @@ solveOpening3Units(turnStart,openLimit,bestDest,bestScore);
 }else if(comb<=12000.0&&M_cnt<64&&S_cnt<64){
 ExactSolver ex;
 ex.startTp=turnStart;
-ex.limitMs=maxTimeMs;
+ex.limitMs=(curTurn==1?700.0:27.5);
 ex.dfsMove(0);
 bestScore=ex.bestScore;
 for(int i=0;i<M_cnt;++i)bestDest[i]=ex.bestDest[i];
 for(int j=0;j<S_cnt;++j)bestSpawn[j]=ex.bestSpawn[j];
+if(!ex.timedOut){
+selectBestWithPly2(turnStart,(curTurn==1?800.0:36.2),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
+}
 }else{
 vector<int>curDest(M_cnt);
 vector<int>curSpawn(S_cnt,-1);
@@ -2471,13 +2817,17 @@ bestScore=curScore;
 bestDest=curDest;
 bestSpawn=curSpawn;
 }
+bool usePly2AfterSA=(M_cnt<=44&&S_cnt<=24);
 double temp=2600.0;
-double saBudgetMs=(curTurn==1?740.0:32.5);
-double oracle1Ms=(curTurn==1?230.0:10.8);
-double oracle2Ms=(curTurn==1?470.0:21.4);
-double advBudget=(curTurn==1?8.0:1.00);
+double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?28.8:32.5));
+double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?31.8:maxTimeMs));
+double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?9.6:10.8));
+double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?19.2:21.4));
+double advBudget=(curTurn==1?8.0:0.95);
 int oracleStage=0;
 vector<int>stage1BestDest=bestDest,stage1BestSpawn=bestSpawn;
+Ply2Cand saTopPool[8];
+int nSaTop=0;
 int iter=0;
 int savedIdx[64],savedVal[64],nSaved=0;
 int savedSpIdx[16],savedSpVal[16],nSavedSp=0;
@@ -2886,6 +3236,9 @@ bestScore=newScore;
 bestDest=curDest;
 bestSpawn=curSpawn;
 }
+if(usePly2AfterSA&&oracleStage==2&&newScore>=bestScore-2600LL){
+insertPly2Cand(saTopPool,nSaTop,8,newScore,bestScore-2600LL,curDest.data(),curSpawn.data());
+}
 }else{
 for(int k=nSaved-1;k>=0;--k)curDest[savedIdx[k]]=savedVal[k];
 for(int k=nSavedSp-1;k>=0;--k)curSpawn[savedSpIdx[k]]=savedSpVal[k];
@@ -2896,7 +3249,7 @@ curSpawn=bestSpawn;
 curScore=bestScore;
 for(int i=0;i<M_cnt;++i){
 double elapsed=chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count();
-if(elapsed>=maxTimeMs)goto polish_done;
+if(elapsed>=polishMaxMs)goto polish_done;
 int u=unitLocs[i];
 int orig=curDest[i];
 int bestOpt=orig;
@@ -2911,7 +3264,7 @@ curDest[i]=bestOpt;
 }
 for(int j=0;j<S_cnt;++j){
 double elapsed=chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count();
-if(elapsed>=maxTimeMs)goto polish_done;
+if(elapsed>=polishMaxMs)goto polish_done;
 int orig=curSpawn[j];
 int bestOpt=orig;
 for(int cand=-1;cand<3;++cand){
@@ -2926,6 +3279,9 @@ polish_done:
 bestDest=curDest;
 bestSpawn=curSpawn;
 bestScore=curScore;
+if(usePly2AfterSA){
+selectBestWithPly2(turnStart,(curTurn==1?820.0:36.2),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
+}
 }
 int moveCount[MAX_N][MAX_N];
 memset(moveCount,0,sizeof(moveCount));
