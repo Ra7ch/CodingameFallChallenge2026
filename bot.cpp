@@ -394,7 +394,6 @@ const Tri&t=allTris[i];
 if(t.owner==0){
 int idx=S_cnt++;
 ownedTriIdx[idx]=i;
-sTriMask[idx]=t.mask;
 ownedUnionMask|=t.mask;
 oppCanThreatenOwned[idx]=(t.oppCan&&oppReach[t.h1]>=1&&oppReach[t.h2]>=1&&oppReach[t.h3]>=1);
 }else if(t.meCan){
@@ -473,9 +472,6 @@ for(int nb:adj[c])if(myUnits[nb]>0){hasNear=true;break;}
 if(hasNear)nearCorners++;
 }
 attr+=nearCorners*55.0;
-for(int j=0;j<S_cnt;++j){
-if(__builtin_popcountll(t.mask&sTriMask[j])==2){attr+=75.0;break;}
-}
 int oppStack=oppUnits[t.h1]+oppUnits[t.h2]+oppUnits[t.h3];
 if(oppStack>=3&&M_cnt<30)attr*=0.72;
 pot+=attr*decay[d];
@@ -1076,19 +1072,16 @@ int occ=(u0[t.h1]>0)+(u0[t.h2]>0)+(u0[t.h3]>0);
 score-=(occ-1)*200;
 }
 }
-int newCaps=0;
-int capIndices[MAX_T];
 for(int ci=0;ci<C_cnt;++ci){
 int tid=capTriIdx[ci];
 const Tri&t=allTris[tid];
 if(!t.meCan)continue;
 uint64_t m=owned0&t.mask;
 if(m==t.mask){
-capIndices[newCaps++]=tid;
 totalOwnedEnd++;
 int robCnt=__builtin_popcountll(owned0_rob&t.mask);
 int predHits=__builtin_popcountll(predBlockMask&t.mask);
-score+=5600-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
+score+=4750-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
 if(robCnt==3&&predHits==0){
 safeOwnedEnd++;
 }
@@ -1098,9 +1091,6 @@ score+=750+robCnt*250;
 }else{
 score+=250+robCnt*150;
 }
-}
-for(int j=0;j<S_cnt;++j){
-if(__builtin_popcountll(t.mask&sTriMask[j])==2){score+=1200;break;}
 }
 }else{
 int cnt=__builtin_popcountll(m);
@@ -1112,16 +1102,6 @@ if(adjMask[miss]&myOccMask)score+=220;
 score+=55;
 }
 }
-}
-if(newCaps>=2){
-score+=(newCaps==2?3200LL:8000LL+(int64_t)(newCaps-3)*5500LL);
-int sharedEdges=0;
-for(int a=0;a<newCaps;++a){
-for(int b=a+1;b<newCaps;++b){
-if(__builtin_popcountll(allTris[capIndices[a]].mask&allTris[capIndices[b]].mask)==2)sharedEdges++;
-}
-}
-score+=sharedEdges*1800LL;
 }
 for(int ri=0;ri<R_cnt;++ri){
 int tid=resetTriIdx[ri];
@@ -1443,24 +1423,18 @@ sc-=4100;
 }
 }
 }
-int newCaps=0;
-int capIndices[MAX_T];
 for(int ci=0;ci<C_cnt;++ci){
 uint64_t m=cTriMask[ci];
 int osIdx=cTriOwner1OsIdx[ci];
 if((ow0&m)==m){
-capIndices[newCaps++]=ci;
 myTrisEnd++;
-sc+=5600;
+sc+=4750;
 if(br.isStatic){
 int robCnt=__builtin_popcountll(owned0_rob&m);
 sc-=(3-robCnt)*400;
 }
 if(osIdx>=0&&oppHoldMode){
 sc+=450;
-}
-for(int j=0;j<S_cnt;++j){
-if(__builtin_popcountll(m&sTriMask[j])==2){sc+=1200;break;}
 }
 }else{
 if(osIdx>=0){
@@ -1481,16 +1455,6 @@ if(adjMask[miss]&myOccMask)sc+=200;
 sc+=55;
 }
 }
-}
-if(newCaps>=2){
-sc+=(newCaps==2?3200LL:8000LL+(int64_t)(newCaps-3)*5500LL);
-int sharedEdges=0;
-for(int a=0;a<newCaps;++a){
-for(int b=a+1;b<newCaps;++b){
-if(__builtin_popcountll(cTriMask[capIndices[a]]&cTriMask[capIndices[b]])==2)sharedEdges++;
-}
-}
-sc+=sharedEdges*1800LL;
 }
 for(int ri=0;ri<ROpp_cnt;++ri){
 uint64_t m=rOppTriMask[ri];

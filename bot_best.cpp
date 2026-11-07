@@ -445,7 +445,6 @@ void precomputeTurnMetrics(bool buildPortfolio = true) {
         if (t.owner == 0) {
             int idx = S_cnt++;
             ownedTriIdx[idx] = i;
-            sTriMask[idx] = t.mask;
             ownedUnionMask |= t.mask;
             oppCanThreatenOwned[idx] = (t.oppCan && oppReach[t.h1] >= 1 && oppReach[t.h2] >= 1 && oppReach[t.h3] >= 1);
         } else if (t.meCan) {
@@ -534,12 +533,6 @@ void precomputeTurnMetrics(bool buildPortfolio = true) {
                 if (hasNear) nearCorners++;
             }
             attr += nearCorners * 55.0;
-            for (int j = 0; j < S_cnt; ++j) {
-                if (__builtin_popcountll(t.mask & sTriMask[j]) == 2) {
-                    attr += 75.0;
-                    break;
-                }
-            }
             // Discount fortified enemy corners while we still have safer expansion targets
             int oppStack = oppUnits[t.h1] + oppUnits[t.h2] + oppUnits[t.h3];
             if (oppStack >= 3 && M_cnt < 30) attr *= 0.72;
@@ -1197,19 +1190,16 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
     }
 
     // Evaluate capturable triangles (meCan == 1 && owner != 0)
-    int newCaps = 0;
-    int capIndices[MAX_T];
     for (int ci = 0; ci < C_cnt; ++ci) {
         int tid = capTriIdx[ci];
         const Tri& t = allTris[tid];
         if (!t.meCan) continue;
         uint64_t m = owned0 & t.mask;
         if (m == t.mask) {
-            capIndices[newCaps++] = tid;
             totalOwnedEnd++;
             int robCnt = __builtin_popcountll(owned0_rob & t.mask);
             int predHits = __builtin_popcountll(predBlockMask & t.mask);
-            score += 5600 - (3 - robCnt) * 650 - (predHits == 0 ? 0 : (predHits == 1 ? 550 : 950));
+            score += 4750 - (3 - robCnt) * 650 - (predHits == 0 ? 0 : (predHits == 1 ? 550 : 950));
             if (robCnt == 3 && predHits == 0) {
                 safeOwnedEnd++;
             }
@@ -1218,12 +1208,6 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
                     score += 750 + robCnt * 250; // Up to +1500 when opponent is holding/dominating
                 } else {
                     score += 250 + robCnt * 150; // Modest bonus during growth phase (opp spawns anyway!)
-                }
-            }
-            for (int j = 0; j < S_cnt; ++j) {
-                if (__builtin_popcountll(t.mask & sTriMask[j]) == 2) {
-                    score += 1200;
-                    break;
                 }
             }
         } else {
@@ -1236,18 +1220,6 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
                 score += 55;
             }
         }
-    }
-    if (newCaps >= 2) {
-        score += (newCaps == 2 ? 3200LL : 8000LL + (int64_t)(newCaps - 3) * 5500LL);
-        int sharedEdges = 0;
-        for (int a = 0; a < newCaps; ++a) {
-            for (int b = a + 1; b < newCaps; ++b) {
-                if (__builtin_popcountll(allTris[capIndices[a]].mask & allTris[capIndices[b]].mask) == 2) {
-                    sharedEdges++;
-                }
-            }
-        }
-        score += sharedEdges * 1800LL;
     }
 
     // Evaluate neutral meCan == 0 triangles (Triangle Farming Engine!)
@@ -1616,27 +1588,18 @@ int64_t evalPortfolio(const int* __restrict__ dest, const int* __restrict__ spaw
         }
 
         // 2. C_cnt (t.owner != 0 && t.meCan == 1, includes all t.owner == 1 triangles)
-        int newCaps = 0;
-        int capIndices[MAX_T];
         for (int ci = 0; ci < C_cnt; ++ci) {
             uint64_t m = cTriMask[ci];
             int osIdx = cTriOwner1OsIdx[ci];
             if ((ow0 & m) == m) {
-                capIndices[newCaps++] = ci;
                 myTrisEnd++;
-                sc += 5600;
+                sc += 4750;
                 if (br.isStatic) {
                     int robCnt = __builtin_popcountll(owned0_rob & m);
                     sc -= (3 - robCnt) * 400;
                 }
                 if (osIdx >= 0 && oppHoldMode) {
                     sc += 450;
-                }
-                for (int j = 0; j < S_cnt; ++j) {
-                    if (__builtin_popcountll(m & sTriMask[j]) == 2) {
-                        sc += 1200;
-                        break;
-                    }
                 }
             } else {
                 if (osIdx >= 0) {
@@ -1657,18 +1620,6 @@ int64_t evalPortfolio(const int* __restrict__ dest, const int* __restrict__ spaw
                     sc += 55;
                 }
             }
-        }
-        if (newCaps >= 2) {
-            sc += (newCaps == 2 ? 3200LL : 8000LL + (int64_t)(newCaps - 3) * 5500LL);
-            int sharedEdges = 0;
-            for (int a = 0; a < newCaps; ++a) {
-                for (int b = a + 1; b < newCaps; ++b) {
-                    if (__builtin_popcountll(cTriMask[capIndices[a]] & cTriMask[capIndices[b]]) == 2) {
-                        sharedEdges++;
-                    }
-                }
-            }
-            sc += sharedEdges * 1800LL;
         }
 
         // 3. ROpp_cnt (t.owner == -1 && !t.meCan && t.oppCan == 1)
