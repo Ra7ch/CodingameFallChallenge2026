@@ -108,9 +108,6 @@ uint64_t triNbrUnion[MAX_T]; // corners + neighbors of corners
 
 int R_cnt;
 int resetTriIdx[MAX_T];
-uint64_t myHasUnitsMaskGlobal;
-int hotCapTris[MAX_T];
-int nHotCap = 0;
 
 // Moving units
 int M_cnt;
@@ -468,29 +465,6 @@ void precomputeTurnMetrics(bool buildPortfolio = true) {
     for (int u = 0; u < N; ++u) {
         for (int k = 0; k < myUnits[u]; ++k) {
             unitLocs[M_cnt++] = u;
-        }
-    }
-
-    myHasUnitsMaskGlobal = 0;
-    for (int u = 0; u < N; ++u) {
-        if (myUnits[u] > 0) myHasUnitsMaskGlobal |= (1ULL << u);
-    }
-    uint64_t myAdjUnion = 0;
-    for (int u = 0; u < N; ++u) {
-        if (myUnits[u] > 0) myAdjUnion |= (1ULL << u) | initAdjMask[u];
-    }
-    uint64_t spawnMask = 0;
-    for (int j = 0; j < S_cnt; ++j) {
-        spawnMask |= allTris[ownedTriIdx[j]].mask;
-    }
-    uint64_t reach1 = myAdjUnion | spawnMask;
-
-    nHotCap = 0;
-    for (int ci = 0; ci < C_cnt; ++ci) {
-        int tid = capTriIdx[ci];
-        const Tri& t = allTris[tid];
-        if ((t.mask & ~reach1) == 0) {
-            hotCapTris[nHotCap++] = tid;
         }
     }
 
@@ -3256,8 +3230,7 @@ int main() {
                     curSpawn[j] = cand;
                 } else if (roll < 77 && C_cnt > 0 && (M_cnt + S_cnt) > 0) {
                     // Op 3: Exact 3-Corner Relay / Slot Matcher Macro-Move!
-                    int tid = (nHotCap > 0 && rng.nextInt(100) < 85) ? hotCapTris[rng.nextInt(nHotCap)] : capTriIdx[rng.nextInt(C_cnt)];
-                    const Tri& t = allTris[tid];
+                    const Tri& t = allTris[capTriIdx[rng.nextInt(C_cnt)]];
                     bool lockU[512];
                     bool lockS[MAX_T];
                     memset(lockU, 0, M_cnt * sizeof(bool));
@@ -3289,10 +3262,8 @@ int main() {
                             break;
                         }
                     }
-                    bool success = true;
                     for (int idx = 0; idx < 3; ++idx) {
                         int corner = t.c[ord[idx]];
-                        int minReq = (adjMask[corner] != 0 && (adjMask[corner] & ~t.mask) == 0) ? 0 : oppUnits[corner] + 1;
                         int req = (reinforce ? max(oppRobustUnits[corner], oppPredUnits[corner]) : oppUnits[corner]) + 1;
                         if (adjMask[corner] != 0 && (adjMask[corner] & ~t.mask) == 0) {
                             req = 0; // Degree-2 corner inside t is auto-owned (and enemy wiped!) when the other 2 corners are owned!
@@ -3361,21 +3332,6 @@ int main() {
                             }
                             if (!found) break;
                         }
-                        if (assigned < minReq) {
-                            success = false;
-                            break;
-                        }
-                    }
-                    if (!success) {
-                        while (nSaved > 0) {
-                            nSaved--;
-                            curDest[savedIdx[nSaved]] = savedVal[nSaved];
-                        }
-                        while (nSavedSp > 0) {
-                            nSavedSp--;
-                            curSpawn[savedSpIdx[nSavedSp]] = savedSpVal[nSavedSp];
-                        }
-                        continue;
                     }
                     if (nSaved == 0 && nSavedSp == 0) continue;
                 } else if (roll < 84 && R_cnt > 0) {
