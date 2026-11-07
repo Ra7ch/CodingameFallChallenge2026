@@ -1702,15 +1702,10 @@ int64_t evalPortfolio(const int* __restrict__ dest, const int* __restrict__ spaw
             if (oppReach[u] > 0) {
                 sharedScore += ((int64_t)extra * nodePotential[u]) >> 1;
                 sharedScore -= (int64_t)extra * extra * 48LL;
-            } else if (minCapDist[u] >= 1 && !((rTriUnionMask >> u) & 1ULL)) {
-                int transitUseful = min(extra, 2);
-                int remExtra = extra - transitUseful;
-                sharedScore += ((int64_t)transitUseful * nodePotential[u] * 3) >> 2;
-                sharedScore += ((int64_t)remExtra * nodePotential[u]) >> 2;
-                sharedScore -= (int64_t)extra * extra * 38LL;
             } else {
-                sharedScore += ((int64_t)extra * nodePotential[u]) >> 2;
-                sharedScore -= (int64_t)extra * extra * 85LL;
+                // Peaceful backline node: penalize stacking multiple units so units push forward to the frontier!
+                sharedScore -= (int64_t)extra * 320LL;
+                sharedScore -= (int64_t)extra * extra * 75LL;
             }
         }
 
