@@ -1177,7 +1177,7 @@ score-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-score-=(cnt==3?800LL:2600LL+(int64_t)(cnt-3)*5000LL);
+score-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
 }else if((activePotMask>>u)&1ULL){
 score-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
 }
@@ -1538,7 +1538,7 @@ sharedScore-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-sharedScore-=(cnt==3?800LL:2600LL+(int64_t)(cnt-3)*5000LL);
+sharedScore-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
 }else if((activePotMask>>u)&1ULL){
 sharedScore-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
 }

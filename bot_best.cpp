@@ -1311,7 +1311,7 @@ int64_t evalState(const int* __restrict__ dest, const int* __restrict__ spawnCho
         // Enemy ATTACK kill-zone discipline (for Priority 0 at start of Turn T+1!)
         if (cnt >= 3) {
             if ((activeArmedMask >> u) & 1ULL) {
-                score -= (cnt == 3 ? 800LL : 2600LL + (int64_t)(cnt - 3) * 5000LL);
+                score -= (cnt == 3 ? 1800LL : 32000LL + (int64_t)(cnt - 4) * 15000LL);
             } else if ((activePotMask >> u) & 1ULL) {
                 score -= (cnt == 3 ? 450LL : 2000LL + (int64_t)(cnt - 3) * 4400LL);
             }
@@ -1717,7 +1717,7 @@ int64_t evalPortfolio(const int* __restrict__ dest, const int* __restrict__ spaw
 
         if (cnt >= 3) {
             if ((activeArmedMask >> u) & 1ULL) {
-                sharedScore -= (cnt == 3 ? 800LL : 2600LL + (int64_t)(cnt - 3) * 5000LL);
+                sharedScore -= (cnt == 3 ? 1800LL : 32000LL + (int64_t)(cnt - 4) * 15000LL);
             } else if ((activePotMask >> u) & 1ULL) {
                 sharedScore -= (cnt == 3 ? 450LL : 2000LL + (int64_t)(cnt - 3) * 4400LL);
             }
