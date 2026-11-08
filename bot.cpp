@@ -1156,7 +1156,8 @@ uint64_t aliveOccMask=myOccMask&~killedMyMask;
 for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
-int need=oppUnits[u]+1;
+int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
+int need=threat+1;
 int useful=min(cnt,need);
 int extra=cnt-useful;
 score-=(int64_t)cnt*minCapDist[u]*85LL;
@@ -1517,7 +1518,8 @@ uint64_t aliveOccMask=myOccMask&~k0MaskStatic;
 for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
-int need=(minCapDist[u]==0?max(oppUnits[u],oppRobustUnits[u]):oppUnits[u])+1;
+int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
+int need=threat+1;
 int useful=min(cnt,need);
 int extra=cnt-useful;
 sharedScore-=(int64_t)cnt*minCapDist[u]*85LL;
