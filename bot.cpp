@@ -89,10 +89,7 @@ int ownedTriIdx[MAX_T];
 bool oppCanThreatenOwned[MAX_T];
 int C_cnt;
 int capTriIdx[MAX_T];
-int hotCapTris[MAX_T],nHotCap=0;
 uint64_t triNbrUnion[MAX_T];
-bool wasOwnedByMe[MAX_T];
-int freshCapCntGlobal;
 int R_cnt;
 int resetTriIdx[MAX_T];
 int M_cnt;
@@ -412,37 +409,10 @@ if(adjMask[u]!=0&&((ownedUnionMask>>u)&1ULL)&&(adjMask[u]&~ownedUnionMask)==0){
 interiorOwnedMask|=(1ULL<<u);
 }
 }
-freshCapCntGlobal=0;
-for(int ci=0;ci<C_cnt;++ci){
-int tid=capTriIdx[ci];
-if(!wasOwnedByMe[tid]||allTris[tid].owner==1)freshCapCntGlobal++;
-}
 M_cnt=0;
 for(int u=0;u<N;++u){
 for(int k=0;k<myUnits[u];++k){
 unitLocs[M_cnt++]=u;
-}
-}
-int mySpawnCapableCnt[MAX_N]={0};
-for(int j=0;j<S_cnt;++j){
-const Tri&t=allTris[ownedTriIdx[j]];
-mySpawnCapableCnt[t.h1]++;mySpawnCapableCnt[t.h2]++;mySpawnCapableCnt[t.h3]++;
-}
-int myReach[MAX_N];
-for(int u=0;u<N;++u){
-int reach=myUnits[u]+mySpawnCapableCnt[u];
-for(int v:adj[u])reach+=myUnits[v];
-myReach[u]=reach;
-}
-nHotCap=0;
-for(int ci=0;ci<C_cnt;++ci){
-int tid=capTriIdx[ci];
-const Tri&t=allTris[tid];
-int req1=((pureEarMask>>t.h1)&1ULL)&&oppUnits[t.h1]==0?0:(oppUnits[t.h1]+1);
-int req2=((pureEarMask>>t.h2)&1ULL)&&oppUnits[t.h2]==0?0:(oppUnits[t.h2]+1);
-int req3=((pureEarMask>>t.h3)&1ULL)&&oppUnits[t.h3]==0?0:(oppUnits[t.h3]+1);
-if(myReach[t.h1]>=req1&&myReach[t.h2]>=req2&&myReach[t.h3]>=req3){
-hotCapTris[nHotCap++]=tid;
 }
 }
 domThreshold=0;
@@ -489,12 +459,9 @@ if(d==INF_DIST)d=min({distMat[u][t.h1],distMat[u][t.h2],distMat[u][t.h3]});
 if(d<bestDCap)bestDCap=d;
 if(d>=12)continue;
 double attr=205.0;
-if(t.owner==1){
-attr=(oppHoldMode?280.0:225.0);
-}else if(!wasOwnedByMe[capTriIdx[ci]]){
-attr+=85.0;
-}else if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
-if(freshCapCntGlobal>0)attr*=0.55;
+if(t.owner==1)attr=(oppHoldMode?270.0:205.0);
+if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
+attr+=60.0;
 }
 int nearCorners=0;
 for(int c:t.c){
@@ -1114,13 +1081,7 @@ if(m==t.mask){
 totalOwnedEnd++;
 int robCnt=__builtin_popcountll(owned0_rob&t.mask);
 int predHits=__builtin_popcountll(predBlockMask&t.mask);
-int64_t capBonus=4750;
-if(!wasOwnedByMe[tid]||t.owner==1){
-capBonus+=450;
-}else if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
-if(freshCapCntGlobal>0)capBonus-=400;
-}
-score+=capBonus-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
+score+=4750-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
 if(robCnt==3&&predHits==0){
 safeOwnedEnd++;
 }
@@ -1160,7 +1121,7 @@ score-=420+occ*280+min(4,totU)*80;
 }
 int totalEndUnits=M_cnt+numSpawns-killedMyUnits;
 if(totalEndUnits==0&&totalOwnedEnd==0)return-500000000LL;
-if(totalEndUnits<=2&&totalOwnedEnd==0&&myScoreGlobal<oppScoreGlobal)return-250000000LL;
+if(totalEndUnits==1&&totalOwnedEnd==0&&myScoreGlobal<oppScoreGlobal)return-250000000LL;
 if(safeOwnedEnd>=domThreshold){
 return 200000000LL+(int64_t)safeOwnedEnd*50000LL+(int64_t)totalOwnedEnd*10000LL+totalEndUnits*100LL;
 }
@@ -1174,6 +1135,20 @@ if(et.ownedNow){
 if((owned0_rob&et.mask)!=et.mask){
 if(et.armedNow&&(killedOppMask&et.mask)==0)activeArmedMask|=et.zMask;
 else activePotMask|=et.zMask;
+}
+}else{
+bool weBlock=false;
+int cs[3]={et.c0,et.c1,et.c2};
+for(int k=0;k<3;++k){
+int c=cs[k];
+int uAlive=((killedMyMask>>c)&1ULL)?0:u0[c];
+if(((owned0_rob>>c)&1ULL)&&uAlive>=oppReach[c]){
+weBlock=true;
+break;
+}
+}
+if(!weBlock){
+activePotMask|=et.zMask;
 }
 }
 }
@@ -1208,7 +1183,7 @@ score-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
 }
 }
 if(adjMask[u]!=0&&(adjMask[u]&~adv1_pred)==0){
-score-=(int64_t)cnt*4200LL;
+score-=(int64_t)cnt*3600LL;
 }else if((canBeSurr1StepMask>>u)&1ULL){
 bool impossibleToSurr=false;
 int reqEnemy=0;
@@ -1336,7 +1311,7 @@ if(br.u1[u]>u0[u])a1|=(1ULL<<u);
 int k0=0,k1=0;
 int containedBonus=0;
 uint64_t k0Mask=0,k1Mask=0;
-for(uint64_t m=myOccMask;m;m&=(m-1)){
+for(uint64_t m=(myOccMask&br.canSurrMeMask);m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 if((adjMask[u]&~a1)==0){
 k0+=u0[u];
@@ -1451,16 +1426,9 @@ sc-=4100;
 for(int ci=0;ci<C_cnt;++ci){
 uint64_t m=cTriMask[ci];
 int osIdx=cTriOwner1OsIdx[ci];
-int tid=capTriIdx[ci];
 if((ow0&m)==m){
 myTrisEnd++;
-int64_t capBonus=4750;
-if(!wasOwnedByMe[tid]||osIdx>=0){
-capBonus+=450;
-}else if(oppReach[allTris[tid].h1]==0&&oppReach[allTris[tid].h2]==0&&oppReach[allTris[tid].h3]==0){
-if(freshCapCntGlobal>0)capBonus-=400;
-}
-sc+=capBonus;
+sc+=4750;
 if(br.isStatic){
 int robCnt=__builtin_popcountll(owned0_rob&m);
 sc-=(3-robCnt)*400;
@@ -1499,7 +1467,7 @@ int myAlive=totalMyStart-k0;
 int oppAlive=br.totalU1-k1;
 if(myAlive==0&&myTrisEnd==0){
 sc-=300000000LL;
-}else if(myAlive<=2&&myTrisEnd==0&&(myScoreGlobal+myTrisEnd)<(oppScoreGlobal+oppTrisEnd)){
+}else if(myAlive==1&&myTrisEnd==0&&(myScoreGlobal+myTrisEnd)<(oppScoreGlobal+oppTrisEnd)){
 sc-=180000000LL;
 }else if(oppTrisEnd>=domThreshold){
 sc-=120000000LL+(int64_t)oppTrisEnd*20000LL;
@@ -1507,7 +1475,7 @@ sc-=120000000LL+(int64_t)oppTrisEnd*20000LL;
 sc+=95000000LL+(int64_t)myTrisEnd*30000LL+myAlive*100LL;
 }else if(!br.isStatic&&oppAlive==0&&oppTrisEnd==0){
 sc+=150000000LL;
-}else if(!br.isStatic&&oppAlive<=2&&oppTrisEnd==0&&(oppScoreGlobal+oppTrisEnd)<(myScoreGlobal+myTrisEnd)){
+}else if(!br.isStatic&&oppAlive==1&&oppTrisEnd==0&&(oppScoreGlobal+oppTrisEnd)<(myScoreGlobal+myTrisEnd)){
 sc+=90000000LL;
 }
 respScores[r]=sc;
@@ -1531,6 +1499,18 @@ if((owned0_rob&et.mask)!=et.mask){
 if(et.armedNow&&(k1MaskStatic&et.mask)==0)activeArmedMask|=et.zMask;
 else activePotMask|=et.zMask;
 }
+}else{
+bool weBlock=false;
+int cs[3]={et.c0,et.c1,et.c2};
+for(int k=0;k<3;++k){
+int c=cs[k];
+int uAlive=((k0MaskStatic>>c)&1ULL)?0:u0[c];
+if(((owned0_rob>>c)&1ULL)&&uAlive>=oppReach[c]){
+weBlock=true;
+break;
+}
+}
+if(!weBlock)activePotMask|=et.zMask;
 }
 }
 uint64_t aliveOccMask=myOccMask&~k0MaskStatic;
@@ -2454,7 +2434,6 @@ cin>>hid>>hx>>hy;
 pos[hid]={hx,hy};
 }
 FastRNG rng;
-memset(wasOwnedByMe,0,sizeof(wasOwnedByMe));
 while(cin>>myScoreGlobal>>oppScoreGlobal){
 auto turnStart=chrono::high_resolution_clock::now();
 curTurn++;
@@ -2505,7 +2484,6 @@ allTris[i].meCan=(mc!=0);
 allTris[i].oppCan=(oc!=0);
 if(ow==1)initOppTris++;
 else if(ow==0)curMyTris++;
-if(ow==0)wasOwnedByMe[i]=true;
 }
 int linkableCount;
 cin>>linkableCount;
@@ -2547,12 +2525,12 @@ if(unwalkableSurr)savedBoxed+=min(4,myUnits[v]);
 }
 int effKill=oppU+savedBoxed;
 bool worthIt=false;
-if(oppU>=6&&curMyTotal>=12)worthIt=true;
-else if(oppU==5&&curMyTotal>=16&&(curMyTris>=2||curMyTotal>=curOppTotal-4))worthIt=true;
-else if(oppU>=4&&curMyTotal>=26&&curMyTris>=2&&curMyTotal>=curOppTotal-4)worthIt=true;
+if(oppU>=6&&curMyTotal>=8)worthIt=true;
+else if(oppU==5&&curMyTotal>=15&&(curMyTris>=2||curMyTotal>=curOppTotal-2))worthIt=true;
 else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
-else if(oppU>=3&&curMyTotal>=32&&curMyTris>=3&&curMyTotal>=curOppTotal-2)worthIt=true;
-else if(oppU>=3&&curMyTotal>=40&&curMyTris>=3)worthIt=true;
+else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
+else if(oppU==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
+else if(oppU==2&&curMyTotal>=52&&curMyTotal>=curOppTotal+18&&oppTrisOnU>=2&&curMyTris>=5)worthIt=true;
 if(worthIt){
 int val=effKill*120+oppU*40+oppTrisOnU*35;
 if(myUnits[t.h1]==1&&myUnits[t.h2]==1&&myUnits[t.h3]==1&&!t.hasNode(u)){
@@ -2585,9 +2563,7 @@ bool graphChanged=false;
 int initDomNow=0;
 while((double)initDomNow<(double)T_cnt*0.8)initDomNow++;
 int maxAddPaths=(curMyTris>=initDomNow-3)?0:
-(((curMyTotal>=36&&curMyTris>=3&&curMyTotal>=curOppTotal-4)||
-  (curMyTotal>=28&&curMyTris>=4&&curMyTotal>=curOppTotal+2)||
-  (curTurn>=70&&curMyTotal>=26&&curMyTris>=2))?1:0);
+((curMyTotal>=55&&curMyTotal>=curOppTotal+12&&curMyTris>=6)?1:0);
 for(int addStep=0;addStep<maxAddPaths&&!linkablePairs.empty();++addStep){
 uint64_t oppNowMask=0;
 for(int u=0;u<N;++u)if(oppUnits[u]>0)oppNowMask|=(1ULL<<u);
@@ -2763,20 +2739,20 @@ if(comb>1e9)break;
 vector<int>bestDest(M_cnt,0);
 vector<int>bestSpawn(S_cnt,-1);
 int64_t bestScore=-1000000000000000LL;
-double maxTimeMs=(curTurn==1?820.0:41.5);
+double maxTimeMs=(curTurn==1?800.0:36.5);
 if(curTurn<=2&&M_cnt==3&&S_cnt==0){
 double openLimit=(curTurn==1?280.0:32.0);
 solveOpening3Units(turnStart,openLimit,bestDest,bestScore);
 }else if(comb<=12000.0&&M_cnt<64&&S_cnt<64){
 ExactSolver ex;
 ex.startTp=turnStart;
-ex.limitMs=(curTurn==1?700.0:30.0);
+ex.limitMs=(curTurn==1?700.0:27.5);
 ex.dfsMove(0);
 bestScore=ex.bestScore;
 for(int i=0;i<M_cnt;++i)bestDest[i]=ex.bestDest[i];
 for(int j=0;j<S_cnt;++j)bestSpawn[j]=ex.bestSpawn[j];
 if(!ex.timedOut){
-selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?800.0:36.2),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
 }
 }else{
 vector<int>curDest(M_cnt);
@@ -2803,9 +2779,9 @@ bestScore=curScore;
 bestDest=curDest;
 bestSpawn=curSpawn;
 for(int pass=0;pass<2;++pass){
-if(chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=28.0&&curTurn>1)break;
+if(chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=25.0&&curTurn>1)break;
 for(int i=0;i<M_cnt;++i){
-if((i&15)==0&&curTurn>1&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=28.0)break;
+if((i&15)==0&&curTurn>1&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=25.0)break;
 int u=unitLocs[i];
 int orig=curDest[i];
 int bestOpt=orig;
@@ -2837,11 +2813,11 @@ bestSpawn=curSpawn;
 }
 bool usePly2AfterSA=(M_cnt<=44&&S_cnt<=24);
 double temp=2600.0;
-double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?33.5:37.5));
-double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?36.5:maxTimeMs));
-double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?11.2:12.5));
-double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?22.4:25.0));
-double advBudget=(curTurn==1?8.0:1.15);
+double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?28.8:32.5));
+double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?31.8:maxTimeMs));
+double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?9.6:10.8));
+double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?19.2:21.4));
+double advBudget=(curTurn==1?8.0:0.95);
 int oracleStage=0;
 vector<int>stage1BestDest=bestDest,stage1BestSpawn=bestSpawn;
 Ply2Cand saTopPool[8];
@@ -2900,7 +2876,7 @@ iter++;
 nSaved=0;
 nSavedSp=0;
 int roll=rng.nextInt(100);
-if(roll<36&&M_cnt>0){
+if(roll<39&&M_cnt>0){
 int i=rng.nextInt(M_cnt);
 int u=unitLocs[i];
 int cnt=numMoveOpts[u];
@@ -2910,15 +2886,14 @@ if(cand==curDest[i])cand=moveOpts[u][(rng.nextInt(cnt-1)+1)% cnt];
 if(cand==curDest[i])continue;
 savedIdx[nSaved]=i;savedVal[nSaved]=curDest[i];nSaved++;
 curDest[i]=cand;
-}else if(roll<54&&S_cnt>0){
+}else if(roll<57&&S_cnt>0){
 int j=rng.nextInt(S_cnt);
 int cand=rng.nextInt(4)-1;
 if(cand==curSpawn[j])continue;
 savedSpIdx[nSavedSp]=j;savedSpVal[nSavedSp]=curSpawn[j];nSavedSp++;
 curSpawn[j]=cand;
-}else if(roll<79&&C_cnt>0&&(M_cnt+S_cnt)>0){
-int op3Tid=(nHotCap>0&&rng.nextInt(100)<65)?hotCapTris[rng.nextInt(nHotCap)]:capTriIdx[rng.nextInt(C_cnt)];
-const Tri&t=allTris[op3Tid];
+}else if(roll<77&&C_cnt>0&&(M_cnt+S_cnt)>0){
+const Tri&t=allTris[capTriIdx[rng.nextInt(C_cnt)]];
 bool lockU[512];
 bool lockS[MAX_T];
 memset(lockU,0,M_cnt*sizeof(bool));
@@ -3299,7 +3274,7 @@ bestDest=curDest;
 bestSpawn=curSpawn;
 bestScore=curScore;
 if(usePly2AfterSA){
-selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?820.0:36.2),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
 }
 }
 int moveCount[MAX_N][MAX_N];
