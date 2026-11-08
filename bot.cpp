@@ -1,4 +1,4 @@
-// Ra07Ch v5.5 - Anti-Stacking Peaceful Nodes + Double-Oracle Simultaneous Zero-Sum Portfolio Search
+// Ra07Ch v5.4 — Simultaneous Double-Oracle + Deduplicated 2-Ply Rollout + Highway Flow
 #pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include <vector>
@@ -1177,7 +1177,7 @@ score-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-score-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
+score-=(cnt==3?800LL:2600LL+(int64_t)(cnt-3)*5000LL);
 }else if((activePotMask>>u)&1ULL){
 score-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
 }
@@ -1526,9 +1526,15 @@ if(extra>0){
 if(oppReach[u]>0){
 sharedScore+=((int64_t)extra*nodePotential[u])>>1;
 sharedScore-=(int64_t)extra*extra*48LL;
+}else if(minCapDist[u]>=1&&!((rTriUnionMask>>u)&1ULL)){
+int transitUseful=min(extra,2);
+int remExtra=extra-transitUseful;
+sharedScore+=((int64_t)transitUseful*nodePotential[u]*3)>>2;
+sharedScore+=((int64_t)remExtra*nodePotential[u])>>2;
+sharedScore-=(int64_t)extra*extra*38LL;
 }else{
-sharedScore-=(int64_t)extra*320LL;
-sharedScore-=(int64_t)extra*extra*75LL;
+sharedScore+=((int64_t)extra*nodePotential[u])>>2;
+sharedScore-=(int64_t)extra*extra*85LL;
 }
 }
 if((pureEarMask>>u)&1ULL){
@@ -1538,7 +1544,7 @@ sharedScore-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-sharedScore-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
+sharedScore-=(cnt==3?800LL:2600LL+(int64_t)(cnt-3)*5000LL);
 }else if((activePotMask>>u)&1ULL){
 sharedScore-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
 }
@@ -2739,20 +2745,20 @@ if(comb>1e9)break;
 vector<int>bestDest(M_cnt,0);
 vector<int>bestSpawn(S_cnt,-1);
 int64_t bestScore=-1000000000000000LL;
-double maxTimeMs=(curTurn==1?800.0:36.5);
+double maxTimeMs=(curTurn==1?820.0:41.5);
 if(curTurn<=2&&M_cnt==3&&S_cnt==0){
 double openLimit=(curTurn==1?280.0:32.0);
 solveOpening3Units(turnStart,openLimit,bestDest,bestScore);
 }else if(comb<=12000.0&&M_cnt<64&&S_cnt<64){
 ExactSolver ex;
 ex.startTp=turnStart;
-ex.limitMs=(curTurn==1?700.0:27.5);
+ex.limitMs=(curTurn==1?700.0:30.0);
 ex.dfsMove(0);
 bestScore=ex.bestScore;
 for(int i=0;i<M_cnt;++i)bestDest[i]=ex.bestDest[i];
 for(int j=0;j<S_cnt;++j)bestSpawn[j]=ex.bestSpawn[j];
 if(!ex.timedOut){
-selectBestWithPly2(turnStart,(curTurn==1?800.0:36.2),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
 }
 }else{
 vector<int>curDest(M_cnt);
@@ -2813,11 +2819,11 @@ bestSpawn=curSpawn;
 }
 bool usePly2AfterSA=(M_cnt<=44&&S_cnt<=24);
 double temp=2600.0;
-double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?28.8:32.5));
-double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?31.8:maxTimeMs));
-double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?9.6:10.8));
-double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?19.2:21.4));
-double advBudget=(curTurn==1?8.0:0.95);
+double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?33.5:37.5));
+double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?36.5:maxTimeMs));
+double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?11.2:12.5));
+double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?22.4:25.0));
+double advBudget=(curTurn==1?8.0:1.15);
 int oracleStage=0;
 vector<int>stage1BestDest=bestDest,stage1BestSpawn=bestSpawn;
 Ply2Cand saTopPool[8];
@@ -3274,7 +3280,7 @@ bestDest=curDest;
 bestSpawn=curSpawn;
 bestScore=curScore;
 if(usePly2AfterSA){
-selectBestWithPly2(turnStart,(curTurn==1?820.0:36.2),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
 }
 }
 int moveCount[MAX_N][MAX_N];
