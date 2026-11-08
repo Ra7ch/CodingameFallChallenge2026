@@ -23,7 +23,7 @@ def submit(bot_file="bot.cpp"):
         headers=headers,
         method="POST"
     )
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=25) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         print("Submission response:", json.dumps(data, indent=2))
         return data

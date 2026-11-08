@@ -1152,7 +1152,7 @@ score-=420+occ*280+min(4,totU)*80;
 }
 int totalEndUnits=M_cnt+numSpawns-killedMyUnits;
 if(totalEndUnits==0&&totalOwnedEnd==0)return-500000000LL;
-if(totalEndUnits==1&&totalOwnedEnd==0&&myScoreGlobal<oppScoreGlobal)return-250000000LL;
+if(totalEndUnits<=2&&totalOwnedEnd==0&&myScoreGlobal<oppScoreGlobal)return-250000000LL;
 if(safeOwnedEnd>=domThreshold){
 return 200000000LL+(int64_t)safeOwnedEnd*50000LL+(int64_t)totalOwnedEnd*10000LL+totalEndUnits*100LL;
 }
@@ -1489,7 +1489,7 @@ int myAlive=totalMyStart-k0;
 int oppAlive=br.totalU1-k1;
 if(myAlive==0&&myTrisEnd==0){
 sc-=300000000LL;
-}else if(myAlive==1&&myTrisEnd==0&&(myScoreGlobal+myTrisEnd)<(oppScoreGlobal+oppTrisEnd)){
+}else if(myAlive<=2&&myTrisEnd==0&&(myScoreGlobal+myTrisEnd)<(oppScoreGlobal+oppTrisEnd)){
 sc-=180000000LL;
 }else if(oppTrisEnd>=domThreshold){
 sc-=120000000LL+(int64_t)oppTrisEnd*20000LL;
@@ -1497,7 +1497,7 @@ sc-=120000000LL+(int64_t)oppTrisEnd*20000LL;
 sc+=95000000LL+(int64_t)myTrisEnd*30000LL+myAlive*100LL;
 }else if(!br.isStatic&&oppAlive==0&&oppTrisEnd==0){
 sc+=150000000LL;
-}else if(!br.isStatic&&oppAlive==1&&oppTrisEnd==0&&(oppScoreGlobal+oppTrisEnd)<(myScoreGlobal+myTrisEnd)){
+}else if(!br.isStatic&&oppAlive<=2&&oppTrisEnd==0&&(oppScoreGlobal+oppTrisEnd)<(myScoreGlobal+myTrisEnd)){
 sc+=90000000LL;
 }
 respScores[r]=sc;
@@ -2753,20 +2753,20 @@ if(comb>1e9)break;
 vector<int>bestDest(M_cnt,0);
 vector<int>bestSpawn(S_cnt,-1);
 int64_t bestScore=-1000000000000000LL;
-double maxTimeMs=(curTurn==1?800.0:36.5);
+double maxTimeMs=(curTurn==1?820.0:41.5);
 if(curTurn<=2&&M_cnt==3&&S_cnt==0){
 double openLimit=(curTurn==1?280.0:32.0);
 solveOpening3Units(turnStart,openLimit,bestDest,bestScore);
 }else if(comb<=12000.0&&M_cnt<64&&S_cnt<64){
 ExactSolver ex;
 ex.startTp=turnStart;
-ex.limitMs=(curTurn==1?700.0:27.5);
+ex.limitMs=(curTurn==1?700.0:30.0);
 ex.dfsMove(0);
 bestScore=ex.bestScore;
 for(int i=0;i<M_cnt;++i)bestDest[i]=ex.bestDest[i];
 for(int j=0;j<S_cnt;++j)bestSpawn[j]=ex.bestSpawn[j];
 if(!ex.timedOut){
-selectBestWithPly2(turnStart,(curTurn==1?800.0:36.2),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
 }
 }else{
 vector<int>curDest(M_cnt);
@@ -2793,9 +2793,9 @@ bestScore=curScore;
 bestDest=curDest;
 bestSpawn=curSpawn;
 for(int pass=0;pass<2;++pass){
-if(chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=25.0&&curTurn>1)break;
+if(chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=28.0&&curTurn>1)break;
 for(int i=0;i<M_cnt;++i){
-if((i&15)==0&&curTurn>1&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=25.0)break;
+if((i&15)==0&&curTurn>1&&chrono::duration<double,milli>(chrono::high_resolution_clock::now()-turnStart).count()>=28.0)break;
 int u=unitLocs[i];
 int orig=curDest[i];
 int bestOpt=orig;
@@ -2827,11 +2827,11 @@ bestSpawn=curSpawn;
 }
 bool usePly2AfterSA=(M_cnt<=44&&S_cnt<=24);
 double temp=2600.0;
-double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?28.8:32.5));
-double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?31.8:maxTimeMs));
-double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?9.6:10.8));
-double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?19.2:21.4));
-double advBudget=(curTurn==1?8.0:0.95);
+double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?33.5:37.5));
+double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?36.5:maxTimeMs));
+double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?11.2:12.5));
+double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?22.4:25.0));
+double advBudget=(curTurn==1?8.0:1.15);
 int oracleStage=0;
 vector<int>stage1BestDest=bestDest,stage1BestSpawn=bestSpawn;
 Ply2Cand saTopPool[8];
@@ -3289,7 +3289,7 @@ bestDest=curDest;
 bestSpawn=curSpawn;
 bestScore=curScore;
 if(usePly2AfterSA){
-selectBestWithPly2(turnStart,(curTurn==1?820.0:36.2),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
 }
 }
 int moveCount[MAX_N][MAX_N];

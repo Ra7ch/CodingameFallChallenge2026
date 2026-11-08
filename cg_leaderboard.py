@@ -10,13 +10,13 @@ headers = {"Authorization": f"Bearer {token}", "User-Agent": "CodinGame-Agent/1.
 def get_progress():
     url = "https://www.codingame.com/api/v1/challenges/fall-challenge-2026/progress"
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode())
 
 def get_leaderboard(limit=50, offset=0):
     url = f"https://www.codingame.com/api/v1/challenges/fall-challenge-2026/leaderboard?limit={limit}&offset={offset}"
     req = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode())
 
 def main():
