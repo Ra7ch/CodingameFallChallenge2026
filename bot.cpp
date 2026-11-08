@@ -1114,7 +1114,13 @@ if(m==t.mask){
 totalOwnedEnd++;
 int robCnt=__builtin_popcountll(owned0_rob&t.mask);
 int predHits=__builtin_popcountll(predBlockMask&t.mask);
-score+=4750-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
+int64_t capBonus=4750;
+if(!wasOwnedByMe[tid]||t.owner==1){
+capBonus+=450;
+}else if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
+if(freshCapCntGlobal>0)capBonus-=400;
+}
+score+=capBonus-(3-robCnt)*650-(predHits==0?0:(predHits==1?550:950));
 if(robCnt==3&&predHits==0){
 safeOwnedEnd++;
 }
@@ -2366,7 +2372,7 @@ if(sc>ply2Sc){ply2Sc=sc;bOpt=cand;}
 }
 sp2[j]=bOpt;
 }
-int64_t combined=cands[ci].sc*2LL+ply2Sc;
+int64_t combined=cands[ci].sc*4LL+ply2Sc;
 if(combined>bestCombined){
 bestCombined=combined;
 bestIdx=ci;
