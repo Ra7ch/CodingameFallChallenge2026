@@ -418,13 +418,13 @@ unitLocs[M_cnt++]=u;
 domThreshold=0;
 while((double)domThreshold<(double)T_cnt*0.8)domThreshold++;
 oppHoldMode=(totalOppUnitsGlobal>=34||oppTriCountGlobal>=domThreshold-5);
-int baseCap=max(68,(int)ceil(N*1.5));
+int baseCap=max(48,(int)ceil(N*1.25));
 int matchOpp=totalOppUnitsGlobal+8;
 int maxCap=96;
 if(oppTriCountGlobal>=domThreshold-4){
 maxCap=max(56,totalOppUnitsGlobal+4);
 }
-armyTargetGlobal=clamp(max(baseCap,matchOpp),60,maxCap);
+armyTargetGlobal=clamp(max(baseCap,matchOpp),48,maxCap);
 int remTurns=max(1,200-curTurn);
 marginalSpawnGain[0]=0;
 for(int k=1;k<=S_cnt;++k){
