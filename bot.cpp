@@ -493,6 +493,8 @@ if(t.owner==1){
 attr=(oppHoldMode?280.0:225.0);
 }else if(!wasOwnedByMe[capTriIdx[ci]]){
 attr+=85.0;
+}else if(oppReach[t.h1]==0&&oppReach[t.h2]==0&&oppReach[t.h3]==0){
+if(freshCapCntGlobal>0)attr*=0.55;
 }
 int nearCorners=0;
 for(int c:t.c){
@@ -1449,6 +1451,8 @@ myTrisEnd++;
 int64_t capBonus=4750;
 if(!wasOwnedByMe[tid]||osIdx>=0){
 capBonus+=450;
+}else if(oppReach[allTris[tid].h1]==0&&oppReach[allTris[tid].h2]==0&&oppReach[allTris[tid].h3]==0){
+if(freshCapCntGlobal>0)capBonus-=400;
 }
 sc+=capBonus;
 if(br.isStatic){
