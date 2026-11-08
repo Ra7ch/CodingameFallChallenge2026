@@ -2358,7 +2358,7 @@ if(sc>ply2Sc){ply2Sc=sc;bOpt=cand;}
 }
 sp2[j]=bOpt;
 }
-int64_t combined=cands[ci].sc*4LL+ply2Sc;
+int64_t combined=cands[ci].sc*2LL+ply2Sc;
 if(combined>bestCombined){
 bestCombined=combined;
 bestIdx=ci;
