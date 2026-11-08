@@ -2531,11 +2531,10 @@ if(unwalkableSurr)savedBoxed+=min(4,myUnits[v]);
 }
 int effKill=oppU+savedBoxed;
 bool worthIt=false;
-if(oppU>=7&&curMyTotal>=8)worthIt=true;
-else if(oppU==6&&curMyTotal>=12&&curMyTris>=2)worthIt=true;
-else if(oppU==5&&curMyTotal>=18&&curMyTris>=3&&(curMyTotal>=curOppTotal-2))worthIt=true;
-else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=18&&curMyTris>=3)worthIt=true;
-else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=3)worthIt=true;
+if(oppU>=6&&curMyTotal>=8)worthIt=true;
+else if(oppU==5&&curMyTotal>=15&&(curMyTris>=2||curMyTotal>=curOppTotal-2))worthIt=true;
+else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
+else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
 else if(oppU==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
 else if(oppU==2&&curMyTotal>=52&&curMyTotal>=curOppTotal+18&&oppTrisOnU>=2&&curMyTris>=5)worthIt=true;
 if(worthIt){
