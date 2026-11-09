@@ -1,4 +1,4 @@
-// Ra07Ch v5.5 - Anti-Stacking Peaceful Nodes + Double-Oracle Simultaneous Zero-Sum Portfolio Search
+// Ra07Ch v5.4 — Simultaneous Double-Oracle + Deduplicated 2-Ply Rollout + Highway Flow
 #pragma GCC optimize("O3,unroll-loops")
 #include <iostream>
 #include <vector>
@@ -70,6 +70,7 @@ bool armedNow;
 };
 int E_cnt;
 EnemyAtkTri eatkTris[MAX_T];
+int curOppTotalGlobal=0;
 uint64_t oppHasUnitsMask;
 uint64_t oppRobustHasUnitsMask;
 uint64_t oppPredHasUnitsMask;
@@ -101,6 +102,10 @@ int oppTriCountGlobal=0;
 bool oppHoldMode=false;
 int armyTargetGlobal=40;
 int domThreshold=100;
+int remTurnsGlobal=200;
+#ifndef SIMUL_SPAWN_PEN
+#define SIMUL_SPAWN_PEN 350LL
+#endif
 int marginalSpawnGain[512];
 struct OppResponse{
 int u1[MAX_N];
@@ -426,6 +431,7 @@ maxCap=max(56,totalOppUnitsGlobal+4);
 }
 armyTargetGlobal=clamp(max(baseCap,matchOpp),60,maxCap);
 int remTurns=max(1,200-curTurn);
+remTurnsGlobal=remTurns;
 marginalSpawnGain[0]=0;
 for(int k=1;k<=S_cnt;++k){
 int uAfter=M_cnt+k;
@@ -926,11 +932,14 @@ myOccMask|=(1ULL<<d);
 if(d==unitLocs[i])stayCount++;
 }
 int numSpawns=0;
+int spawnCount[MAX_N];
+memset(spawnCount,0,N*sizeof(int));
 for(int j=0;j<S_cnt;++j){
 int sc=spawnChoice[j];
 if(sc>=0){
 int spNode=allTris[ownedTriIdx[j]].c[sc];
 u0[spNode]++;
+spawnCount[spNode]++;
 myOccMask|=(1ULL<<spNode);
 numSpawns++;
 }
@@ -1043,6 +1052,7 @@ if(or0)owned0_rob|=(1ULL<<u);
 }
 int64_t score=oppContainedBonus;
 score+=marginalSpawnGain[numSpawns];
+if(remTurnsGlobal>12){int exSp=numSpawns-3;if(exSp>0)score-=(int64_t)exSp*exSp*SIMUL_SPAWN_PEN;}
 score+=(int64_t)killedOppUnits*3400LL;
 score-=(int64_t)killedMyUnits*5500LL;
 int totalOwnedEnd=0;
@@ -1054,7 +1064,7 @@ if(sc==-1){
 bool oppCapsNow=t.oppCan&&((owned1&t.mask)==t.mask);
 if(!oppCapsNow){
 totalOwnedEnd++;
-score+=2200;
+score+=3400;
 bool oppThreat=oppCanThreatenOwned[j]&&((owned0_rob&t.mask)==0);
 if(!oppThreat){
 safeOwnedEnd++;
@@ -1070,6 +1080,11 @@ score-=1100;
 }
 int occ=(u0[t.h1]>0)+(u0[t.h2]>0)+(u0[t.h3]>0);
 score-=(occ-1)*200;
+}
+}
+for(int u=0;u<N;++u){
+if(spawnCount[u]>1){
+score-=(int64_t)(spawnCount[u]-1)*160LL;
 }
 }
 for(int ci=0;ci<C_cnt;++ci){
@@ -1133,8 +1148,21 @@ for(int ei=0;ei<E_cnt;++ei){
 const EnemyAtkTri&et=eatkTris[ei];
 if(et.ownedNow){
 if((owned0_rob&et.mask)!=et.mask){
-if(et.armedNow&&(killedOppMask&et.mask)==0)activeArmedMask|=et.zMask;
-else activePotMask|=et.zMask;
+if(et.armedNow&&(killedOppMask&et.mask)==0){
+activeArmedMask|=et.zMask;
+int maxU=0;
+for(uint64_t zm=(et.zMask&myOccMask&~killedMyMask);zm;zm&=(zm-1)){
+int u=__builtin_ctzll(zm);
+if(u0[u]>maxU)maxU=u0[u];
+}
+if(maxU>=4){
+score-=(int64_t)maxU*1400LL+2800LL;
+}else if(maxU==3&&curOppTotalGlobal>=28){
+score-=900LL;
+}
+}else{
+activePotMask|=et.zMask;
+}
 }
 }else{
 bool weBlock=false;
@@ -1156,7 +1184,8 @@ uint64_t aliveOccMask=myOccMask&~killedMyMask;
 for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
-int need=oppUnits[u]+1;
+int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
+int need=threat+1;
 int useful=min(cnt,need);
 int extra=cnt-useful;
 score-=(int64_t)cnt*minCapDist[u]*85LL;
@@ -1177,9 +1206,9 @@ score-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-score-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
+score-=(cnt==3?350LL:1200LL+(int64_t)(cnt-3)*3000LL);
 }else if((activePotMask>>u)&1ULL){
-score-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
+score-=(cnt==3?250LL:1500LL+(int64_t)(cnt-3)*3000LL);
 }
 }
 if(adjMask[u]!=0&&(adjMask[u]&~adv1_pred)==0){
@@ -1251,17 +1280,21 @@ myOccMask|=(1ULL<<d);
 if(d==unitLocs[i])stayCount++;
 }
 int numSpawns=0;
+int spawnCount[MAX_N];
+memset(spawnCount,0,N*sizeof(int));
 for(int j=0;j<S_cnt;++j){
 int sc=spawnChoice[j];
 if(sc>=0){
 int spNode=allTris[ownedTriIdx[j]].c[sc];
 u0[spNode]++;
+spawnCount[spNode]++;
 myOccMask|=(1ULL<<spNode);
 numSpawns++;
 }
 }
 int totalMyStart=M_cnt+numSpawns;
 int64_t sharedScore=marginalSpawnGain[numSpawns]+stayCount*3;
+if(remTurnsGlobal>12){int exSp2=numSpawns-3;if(exSp2>0)sharedScore-=(int64_t)exSp2*exSp2*SIMUL_SPAWN_PEN;}
 for(int j=0;j<S_cnt;++j){
 int sc=spawnChoice[j];
 if(sc>=0){
@@ -1275,6 +1308,11 @@ sharedScore-=1100;
 int occ=(u0[t.h1]>0)+(u0[t.h2]>0)+(u0[t.h3]>0);
 sharedScore-=(occ-1)*320;
 if((rTriUnionMask>>spNode)&1ULL)sharedScore-=240;
+}
+}
+for(int u=0;u<N;++u){
+if(spawnCount[u]>1){
+sharedScore-=(int64_t)(spawnCount[u]-1)*160LL;
 }
 }
 for(int ri=0;ri<R_cnt;++ri){
@@ -1411,7 +1449,7 @@ bool oppCaps=sTriOppCan[j]&&((ow1&m)==m);
 if(spawnChoice[j]==-1){
 if(!oppCaps){
 myTrisEnd++;
-sc+=2200;
+sc+=3400;
 }else{
 oppTrisEnd++;
 sc-=4100;
@@ -1496,8 +1534,21 @@ for(int ei=0;ei<E_cnt;++ei){
 const EnemyAtkTri&et=eatkTris[ei];
 if(et.ownedNow){
 if((owned0_rob&et.mask)!=et.mask){
-if(et.armedNow&&(k1MaskStatic&et.mask)==0)activeArmedMask|=et.zMask;
-else activePotMask|=et.zMask;
+if(et.armedNow&&(k1MaskStatic&et.mask)==0){
+activeArmedMask|=et.zMask;
+int maxU=0;
+for(uint64_t zm=(et.zMask&myOccMask&~k0MaskStatic);zm;zm&=(zm-1)){
+int u=__builtin_ctzll(zm);
+if(u0[u]>maxU)maxU=u0[u];
+}
+if(maxU>=4){
+sharedScore-=(int64_t)maxU*1400LL+2800LL;
+}else if(maxU==3&&curOppTotalGlobal>=28){
+sharedScore-=900LL;
+}
+}else{
+activePotMask|=et.zMask;
+}
 }
 }else{
 bool weBlock=false;
@@ -1517,7 +1568,8 @@ uint64_t aliveOccMask=myOccMask&~k0MaskStatic;
 for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
-int need=(minCapDist[u]==0?max(oppUnits[u],oppRobustUnits[u]):oppUnits[u])+1;
+int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
+int need=threat+1;
 int useful=min(cnt,need);
 int extra=cnt-useful;
 sharedScore-=(int64_t)cnt*minCapDist[u]*85LL;
@@ -1526,9 +1578,15 @@ if(extra>0){
 if(oppReach[u]>0){
 sharedScore+=((int64_t)extra*nodePotential[u])>>1;
 sharedScore-=(int64_t)extra*extra*48LL;
+}else if(minCapDist[u]>=1&&!((rTriUnionMask>>u)&1ULL)){
+int transitUseful=min(extra,2);
+int remExtra=extra-transitUseful;
+sharedScore+=((int64_t)transitUseful*nodePotential[u]*3)>>2;
+sharedScore+=((int64_t)remExtra*nodePotential[u])>>2;
+sharedScore-=(int64_t)extra*extra*38LL;
 }else{
-sharedScore-=(int64_t)extra*320LL;
-sharedScore-=(int64_t)extra*extra*75LL;
+sharedScore+=((int64_t)extra*nodePotential[u])>>2;
+sharedScore-=(int64_t)extra*extra*85LL;
 }
 }
 if((pureEarMask>>u)&1ULL){
@@ -1538,9 +1596,9 @@ sharedScore-=(int64_t)cnt*450LL;
 }
 if(cnt>=3){
 if((activeArmedMask>>u)&1ULL){
-sharedScore-=(cnt==3?1800LL:32000LL+(int64_t)(cnt-4)*15000LL);
+sharedScore-=(cnt==3?350LL:1200LL+(int64_t)(cnt-3)*3000LL);
 }else if((activePotMask>>u)&1ULL){
-sharedScore-=(cnt==3?450LL:2000LL+(int64_t)(cnt-3)*4400LL);
+sharedScore-=(cnt==3?250LL:1500LL+(int64_t)(cnt-3)*3000LL);
 }
 }
 if((canBeSurr1StepMask>>u)&1ULL){
@@ -2496,6 +2554,7 @@ vector<string>postMoveActions;
 int curMyTotal=totalMyUnitsInit;
 int curOppTotal=0;
 for(int u=0;u<N;++u)curOppTotal+=oppUnits[u];
+curOppTotalGlobal=curOppTotal;
 while(true){
 int bestTri=-1,bestTarget=-1,bestVal=0;
 for(int i=0;i<T_cnt;++i){
@@ -2525,11 +2584,10 @@ if(unwalkableSurr)savedBoxed+=min(4,myUnits[v]);
 }
 int effKill=oppU+savedBoxed;
 bool worthIt=false;
-if(oppU>=6&&curMyTotal>=8)worthIt=true;
-else if(oppU==5&&curMyTotal>=15&&(curMyTris>=2||curMyTotal>=curOppTotal-2))worthIt=true;
-else if(oppU>=3&&savedBoxed>=3&&effKill>=6&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
-else if(oppU==4&&curMyTotal>=36&&curMyTotal>=curOppTotal+2&&curMyTris>=2)worthIt=true;
-else if(oppU==3&&curMyTotal>=46&&curMyTotal>=curOppTotal+12&&curMyTris>=4)worthIt=true;
+if(oppU>=5&&curMyTotal>=12&&curMyTris>=2)worthIt=true;
+else if(oppU==4&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
+else if(oppU>=3&&savedBoxed>=2&&effKill>=5&&curMyTotal>=16&&curMyTris>=2)worthIt=true;
+else if(oppU==3&&curMyTotal>=38&&curMyTotal>=curOppTotal+4&&curMyTris>=3)worthIt=true;
 else if(oppU==2&&curMyTotal>=52&&curMyTotal>=curOppTotal+18&&oppTrisOnU>=2&&curMyTris>=5)worthIt=true;
 if(worthIt){
 int val=effKill*120+oppU*40+oppTrisOnU*35;
@@ -2739,20 +2797,20 @@ if(comb>1e9)break;
 vector<int>bestDest(M_cnt,0);
 vector<int>bestSpawn(S_cnt,-1);
 int64_t bestScore=-1000000000000000LL;
-double maxTimeMs=(curTurn==1?800.0:36.5);
+double maxTimeMs=(curTurn==1?820.0:41.5);
 if(curTurn<=2&&M_cnt==3&&S_cnt==0){
 double openLimit=(curTurn==1?280.0:32.0);
 solveOpening3Units(turnStart,openLimit,bestDest,bestScore);
 }else if(comb<=12000.0&&M_cnt<64&&S_cnt<64){
 ExactSolver ex;
 ex.startTp=turnStart;
-ex.limitMs=(curTurn==1?700.0:27.5);
+ex.limitMs=(curTurn==1?700.0:30.0);
 ex.dfsMove(0);
 bestScore=ex.bestScore;
 for(int i=0;i<M_cnt;++i)bestDest[i]=ex.bestDest[i];
 for(int j=0;j<S_cnt;++j)bestSpawn[j]=ex.bestSpawn[j];
 if(!ex.timedOut){
-selectBestWithPly2(turnStart,(curTurn==1?800.0:36.2),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),ex.topPool,ex.nTop,bestDest,bestSpawn,bestScore);
 }
 }else{
 vector<int>curDest(M_cnt);
@@ -2813,11 +2871,11 @@ bestSpawn=curSpawn;
 }
 bool usePly2AfterSA=(M_cnt<=44&&S_cnt<=24);
 double temp=2600.0;
-double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?28.8:32.5));
-double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?31.8:maxTimeMs));
-double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?9.6:10.8));
-double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?19.2:21.4));
-double advBudget=(curTurn==1?8.0:0.95);
+double saBudgetMs=(curTurn==1?700.0:(usePly2AfterSA?33.5:37.5));
+double polishMaxMs=(curTurn==1?745.0:(usePly2AfterSA?36.5:maxTimeMs));
+double oracle1Ms=(curTurn==1?220.0:(usePly2AfterSA?11.2:12.5));
+double oracle2Ms=(curTurn==1?450.0:(usePly2AfterSA?22.4:25.0));
+double advBudget=(curTurn==1?8.0:1.15);
 int oracleStage=0;
 vector<int>stage1BestDest=bestDest,stage1BestSpawn=bestSpawn;
 Ply2Cand saTopPool[8];
@@ -3274,7 +3332,7 @@ bestDest=curDest;
 bestSpawn=curSpawn;
 bestScore=curScore;
 if(usePly2AfterSA){
-selectBestWithPly2(turnStart,(curTurn==1?820.0:36.2),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
+selectBestWithPly2(turnStart,(curTurn==1?850.0:41.5),saTopPool,nSaTop,bestDest,bestSpawn,bestScore);
 }
 }
 int moveCount[MAX_N][MAX_N];
