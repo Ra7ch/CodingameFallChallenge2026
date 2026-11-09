@@ -89,6 +89,18 @@ int hubNeedBonus[MAX_N];
 #ifndef HUB_NEED_MAX
 #define HUB_NEED_MAX 2
 #endif
+#ifndef ADDP_MINU
+#define ADDP_MINU 38
+#endif
+#ifndef ADDP_MINT
+#define ADDP_MINT 5
+#endif
+#ifndef ADDP_BEHIND
+#define ADDP_BEHIND 6
+#endif
+#ifndef ADDP_MAX
+#define ADDP_MAX 1
+#endif
 int oppSupplyNear[MAX_N];
 int K_cnt;
 int surrTargetIdx[MAX_N];
@@ -2638,7 +2650,7 @@ bool graphChanged=false;
 int initDomNow=0;
 while((double)initDomNow<(double)T_cnt*0.8)initDomNow++;
 int maxAddPaths=(curMyTris>=initDomNow-3)?0:
-((curMyTotal>=55&&curMyTotal>=curOppTotal+12&&curMyTris>=6)?1:0);
+((curMyTotal>=ADDP_MINU&&curMyTris>=ADDP_MINT&&curMyTotal>=curOppTotal-ADDP_BEHIND)?ADDP_MAX:0);
 for(int addStep=0;addStep<maxAddPaths&&!linkablePairs.empty();++addStep){
 uint64_t oppNowMask=0;
 for(int u=0;u<N;++u)if(oppUnits[u]>0)oppNowMask|=(1ULL<<u);
