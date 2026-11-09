@@ -82,6 +82,13 @@ uint64_t interiorOwnedMask;
 uint64_t rTriUnionMask;
 int nodePotential[MAX_N];
 int minCapDist[MAX_N];
+int hubNeedBonus[MAX_N];
+#ifndef HUB_DEG_MIN
+#define HUB_DEG_MIN 3
+#endif
+#ifndef HUB_NEED_MAX
+#define HUB_NEED_MAX 2
+#endif
 int oppSupplyNear[MAX_N];
 int K_cnt;
 int surrTargetIdx[MAX_N];
@@ -412,6 +419,16 @@ interiorOwnedMask=0;
 for(int u=0;u<N;++u){
 if(adjMask[u]!=0&&((ownedUnionMask>>u)&1ULL)&&(adjMask[u]&~ownedUnionMask)==0){
 interiorOwnedMask|=(1ULL<<u);
+}
+}
+{
+int triDeg[MAX_N];memset(triDeg,0,N*sizeof(int));
+for(int j=0;j<S_cnt;++j){const Tri&t=allTris[ownedTriIdx[j]];triDeg[t.h1]++;triDeg[t.h2]++;triDeg[t.h3]++;}
+for(int ci=0;ci<C_cnt;++ci){const Tri&t=allTris[capTriIdx[ci]];triDeg[t.h1]++;triDeg[t.h2]++;triDeg[t.h3]++;}
+for(int u=0;u<N;++u){
+int b=0;
+if(triDeg[u]>=HUB_DEG_MIN&&oppReach[u]>0){b=triDeg[u]-(HUB_DEG_MIN-1);if(b>HUB_NEED_MAX)b=HUB_NEED_MAX;}
+hubNeedBonus[u]=b;
 }
 }
 M_cnt=0;
@@ -1185,7 +1202,7 @@ for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
 int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
-int need=threat+1;
+int need=threat+1+hubNeedBonus[u];
 int useful=min(cnt,need);
 int extra=cnt-useful;
 score-=(int64_t)cnt*minCapDist[u]*85LL;
@@ -1569,7 +1586,7 @@ for(uint64_t m=aliveOccMask;m;m&=(m-1)){
 int u=__builtin_ctzll(m);
 int cnt=u0[u];
 int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(minCapDist[u]==0?oppRobustUnits[u]:0)}));
-int need=threat+1;
+int need=threat+1+hubNeedBonus[u];
 int useful=min(cnt,need);
 int extra=cnt-useful;
 sharedScore-=(int64_t)cnt*minCapDist[u]*85LL;
