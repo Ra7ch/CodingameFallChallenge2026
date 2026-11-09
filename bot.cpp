@@ -89,6 +89,9 @@ int hubNeedBonus[MAX_N];
 #ifndef HUB_NEED_MAX
 #define HUB_NEED_MAX 2
 #endif
+#ifndef FWD_PULL
+#define FWD_PULL 85
+#endif
 int oppSupplyNear[MAX_N];
 int K_cnt;
 int surrTargetIdx[MAX_N];
@@ -1205,7 +1208,7 @@ int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(mi
 int need=threat+1+hubNeedBonus[u];
 int useful=min(cnt,need);
 int extra=cnt-useful;
-score-=(int64_t)cnt*minCapDist[u]*85LL;
+score-=(int64_t)cnt*minCapDist[u]*FWD_PULL;
 score+=(int64_t)useful*nodePotential[u];
 if(extra>0){
 if(oppReach[u]>0){
@@ -1589,7 +1592,7 @@ int threat=(oppReach[u]==0?oppUnits[u]:max({oppUnits[u],(oppReach[u]>=3?2:1),(mi
 int need=threat+1+hubNeedBonus[u];
 int useful=min(cnt,need);
 int extra=cnt-useful;
-sharedScore-=(int64_t)cnt*minCapDist[u]*85LL;
+sharedScore-=(int64_t)cnt*minCapDist[u]*FWD_PULL;
 sharedScore+=(int64_t)useful*nodePotential[u];
 if(extra>0){
 if(oppReach[u]>0){
