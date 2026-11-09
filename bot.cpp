@@ -103,8 +103,8 @@ bool oppHoldMode=false;
 int armyTargetGlobal=40;
 int domThreshold=100;
 int remTurnsGlobal=200;
-#ifndef SIMUL_SPAWN_PEN
-#define SIMUL_SPAWN_PEN 350LL
+#ifndef NEUTRALIZE_THREAT_PEN
+#define NEUTRALIZE_THREAT_PEN 3500LL
 #endif
 int marginalSpawnGain[512];
 struct OppResponse{
@@ -1052,7 +1052,6 @@ if(or0)owned0_rob|=(1ULL<<u);
 }
 int64_t score=oppContainedBonus;
 score+=marginalSpawnGain[numSpawns];
-if(remTurnsGlobal>12){int exSp=numSpawns-3;if(exSp>0)score-=(int64_t)exSp*exSp*SIMUL_SPAWN_PEN;}
 score+=(int64_t)killedOppUnits*3400LL;
 score-=(int64_t)killedMyUnits*5500LL;
 int totalOwnedEnd=0;
@@ -1064,7 +1063,7 @@ if(sc==-1){
 bool oppCapsNow=t.oppCan&&((owned1&t.mask)==t.mask);
 if(!oppCapsNow){
 totalOwnedEnd++;
-score+=3400;
+score+=2200;
 bool oppThreat=oppCanThreatenOwned[j]&&((owned0_rob&t.mask)==0);
 if(!oppThreat){
 safeOwnedEnd++;
@@ -1080,6 +1079,7 @@ score-=1100;
 }
 int occ=(u0[t.h1]>0)+(u0[t.h2]>0)+(u0[t.h3]>0);
 score-=(occ-1)*200;
+if(remTurnsGlobal>12&&oppCanThreatenOwned[j])score-=NEUTRALIZE_THREAT_PEN;
 }
 }
 for(int u=0;u<N;++u){
@@ -1294,7 +1294,6 @@ numSpawns++;
 }
 int totalMyStart=M_cnt+numSpawns;
 int64_t sharedScore=marginalSpawnGain[numSpawns]+stayCount*3;
-if(remTurnsGlobal>12){int exSp2=numSpawns-3;if(exSp2>0)sharedScore-=(int64_t)exSp2*exSp2*SIMUL_SPAWN_PEN;}
 for(int j=0;j<S_cnt;++j){
 int sc=spawnChoice[j];
 if(sc>=0){
@@ -1449,7 +1448,7 @@ bool oppCaps=sTriOppCan[j]&&((ow1&m)==m);
 if(spawnChoice[j]==-1){
 if(!oppCaps){
 myTrisEnd++;
-sc+=3400;
+sc+=2200;
 }else{
 oppTrisEnd++;
 sc-=4100;
@@ -1459,6 +1458,7 @@ if(oppCaps){
 oppTrisEnd++;
 sc-=4100;
 }
+if(remTurnsGlobal>12&&oppCanThreatenOwned[j])sc-=NEUTRALIZE_THREAT_PEN;
 }
 }
 for(int ci=0;ci<C_cnt;++ci){
