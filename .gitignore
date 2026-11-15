@@ -1,31 +1,31 @@
-# Compiled binaries
-bot
-bot_v*
-!bot_v*.cpp
-sim_arena
-bench
-bench_exact
-test_matcher
-test_t3_bench
+# Binaries and compiled objects
 *.o
 *.a
 *.so
+bot
+sim_arena
+*.class
 
-# Sensitive credentials & environment files
-*token*
-*.key
-.env
-
-# Large test output logs & API snapshots
+# Logs, replays, and dumps
 *.log
-tg_*.json
-current_*.json
-v3*.json
-test_*.json
-test_vickingur.json
+*.jsonl
+*.txt
+!referee/bosses.txt
+!referee/config/stub.txt
+*.json
+!referee/**/*.json
 
 # Python cache
 __pycache__/
-*.py[cod]
-*$py.class
-bot_best
+*.pyc
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# Internal agent data
+.agents/
+.claude/
